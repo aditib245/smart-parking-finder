@@ -1,3 +1,25 @@
+[project]
+name = "smart-parking-finder"
+version = "0.1.0"
+requires-python = ">=3.11"
+# Packages the app needs to run. `uv sync` installs exactly these into .venv.
+dependencies = [
+  "numpy>=2.4.6",
+  "opencv-python>=5.0.0.93",
+  "pytest>=9.2.0",
+  "shapely>=2.2.0",
+]
+
+[dependency-groups]
+# Packages only needed while developing (tests). Installed by `uv sync` too.
+dev = [
+  "pytest>=9.2.0",
+]
+
+[tool.uv]
+# This is an app, not a library to publish, so uv should not try to build/install it.
+package = false
+
 [tool.pytest.ini_options]
 # Let tests import project folders (e.g. `from eval.pklot import ...`) from the repo root.
 pythonpath = ["."]

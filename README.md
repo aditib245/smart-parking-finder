@@ -6,6 +6,16 @@ Real-time parking availability for a large campus lot: cameras decide which spot
 
 Plan: see `plan.html` (interactive) in this folder.
 
+## Setup
+
+Dependencies are listed in `pyproject.toml` and pinned in `uv.lock`. Install them with [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv sync                       # creates .venv with exactly what pyproject.toml lists
+uv run pytest -q              # run the tests
+uv add <package>              # add a new dependency (updates pyproject.toml and uv.lock)
+```
+
 ## Layout
 
 | Folder | Purpose |
