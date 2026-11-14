@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+
+# datasets and model weights are large: document how to download them instead
+data/*
+!data/.gitkeep
+*.pt
+
+# generated previews and debug images
+out/

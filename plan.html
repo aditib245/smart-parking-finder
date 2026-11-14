@@ -1,0 +1,1096 @@
+<title>Smart Parking Finder Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: a road-sign style planning document. Asphalt-dark lot demo as the one bold object, sign-blue for actions, marking-yellow only on the lot. */
+:root{
+  --bg:#EDEFF1; --surface:#FFFFFF; --surface2:#F4F6F8; --ink:#14191E; --mute:#566069; --line:#D3D9DE;
+  --accent:#1D5FD1; --accent-ink:#FFFFFF; --accent-soft:#E3ECFB;
+  --mark-soft:#FBF1D2; --warn:#8A5A00;
+  --good:#1C7C45; --good-soft:#DDF1E5; --bad:#B8312A; --bad-soft:#F8E1DF;
+  --asphalt:#2B3138; --asphalt-line:#E9B824; --asphalt-ink:#E8ECEF; --lot-free:#6EE7A0;
+  --car1:#7A8CA3; --car2:#B5655C; --car3:#6E9482; --car4:#C4B07A; --car5:#8B7BA8;
+  --font-display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1317; --surface:#171C22; --surface2:#1D242B; --ink:#E6EAEE; --mute:#97A2AD; --line:#2A333B;
+    --accent:#6AA2FF; --accent-ink:#0B1220; --accent-soft:#1B2A44;
+    --mark-soft:#3A3010; --warn:#E0A63A;
+    --good:#4CCB85; --good-soft:#143324; --bad:#F27A70; --bad-soft:#3B1A18;
+    --asphalt:#0B0E11; --asphalt-line:#C9A227;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1317; --surface:#171C22; --surface2:#1D242B; --ink:#E6EAEE; --mute:#97A2AD; --line:#2A333B;
+  --accent:#6AA2FF; --accent-ink:#0B1220; --accent-soft:#1B2A44;
+  --mark-soft:#3A3010; --warn:#E0A63A;
+  --good:#4CCB85; --good-soft:#143324; --bad:#F27A70; --bad-soft:#3B1A18;
+  --asphalt:#0B0E11; --asphalt-line:#C9A227;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:1040px;margin:0 auto}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:clamp(40px,8vw,72px);letter-spacing:.005em;text-transform:uppercase}
+h2{font-size:clamp(30px,5vw,44px);text-transform:uppercase;letter-spacing:.01em}
+h3{font-size:26px;letter-spacing:.01em}
+h4{font-size:19px;letter-spacing:.02em;text-transform:uppercase;margin:22px 0 6px;color:var(--mute)}
+p{margin:0 0 12px;max-width:70ch}
+ul,ol{margin:0 0 12px;padding-left:22px;max-width:70ch}
+li{margin-bottom:4px}
+code,pre{font-family:var(--font-mono);font-size:13.5px}
+code{background:var(--surface2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;overflow-x:auto;margin:0 0 14px;line-height:1.5}
+pre code{background:none;border:0;padding:0}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.kicker{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+.muted{color:var(--mute)}
+.small{font-size:14px}
+section{padding-block:56px 8px;border-top:1px solid var(--line);scroll-margin-top:70px}
+.intro{margin:12px 0 24px;font-size:17px}
+
+/* nav */
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+nav.top .in{max-width:1040px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:thin}
+nav.top button{flex:none;border:0;background:none;padding:6px 10px;border-radius:var(--radius);font-size:14px;color:var(--mute);cursor:pointer;white-space:nowrap}
+nav.top button:hover{background:var(--surface2);color:var(--ink)}
+
+/* hero */
+.hero{padding-block:40px 40px;display:grid;grid-template-columns:1.05fr 1fr;gap:32px;align-items:center}
+.hero > *{min-width:0}
+.hero .lede{font-size:18px;margin-top:16px}
+.stats{display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:20px}
+.stat b{display:block;font-family:var(--font-display);font-size:34px;line-height:1}
+.stat span{font-size:13px;color:var(--mute)}
+@media (max-width:820px){.hero{grid-template-columns:1fr}}
+
+/* the lot */
+.lotwrap{background:var(--asphalt);border-radius:10px;padding:16px;color:var(--asphalt-ink)}
+.lothead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.lothead .big{font-family:var(--font-display);font-size:44px;font-weight:700;line-height:1;text-transform:uppercase}
+.lothead .big small{font-size:18px;opacity:.7;margin-left:6px}
+.lothead .msg{font-family:var(--font-mono);font-size:12px;opacity:.85}
+.lrow{display:grid;grid-template-columns:repeat(8,1fr);border-right:3px solid var(--asphalt-line)}
+.slot{position:relative;aspect-ratio:3/5;border:0;border-left:3px solid var(--asphalt-line);background:transparent;cursor:pointer;padding:0;color:inherit}
+.slot:hover{background:rgba(255,255,255,.07)}
+.slot .car{position:absolute;inset:8% 16% 22% 16%;border-radius:10px;background:var(--c)}
+.slot .car::after{content:"";position:absolute;left:14%;right:14%;top:18%;height:24%;border-radius:4px;background:rgba(255,255,255,.28)}
+.slot .sl{position:absolute;bottom:3px;left:0;right:0;text-align:center;font:500 10px var(--font-mono);opacity:.85}
+.slot .free{position:absolute;inset:0 0 22% 0;display:grid;place-items:center;font:500 11px var(--font-mono);color:var(--lot-free);letter-spacing:.06em}
+.slot[aria-pressed="false"]{box-shadow:inset 0 0 0 2px var(--lot-free)}
+.lane{height:30px;background:repeating-linear-gradient(90deg,var(--asphalt-line) 0 18px,transparent 18px 38px) center/100% 2px no-repeat}
+.lotbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.lotbtns .btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:var(--asphalt-ink)}
+.lotbtns .btn:hover{background:rgba(255,255,255,.16)}
+.lotnote{font-size:13px;color:var(--mute);margin-top:8px}
+
+/* generic */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.card > :last-child{margin-bottom:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+.grid2 > *,.grid3 > *{min-width:0}
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:var(--radius);cursor:pointer;font-size:14px}
+.btn:hover{background:var(--surface2)}
+.btn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;align-items:center}
+.pill{display:inline-block;font:500 12px var(--font-mono);padding:2px 8px;border-radius:99px;border:1px solid var(--line);background:var(--surface2);white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.pill.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.pill.acc{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.pill.warn{background:var(--mark-soft);color:var(--warn);border-color:transparent}
+.rangeRow{display:grid;grid-template-columns:150px 1fr 70px;gap:10px;align-items:center;margin:8px 0}
+.rangeRow label{font-size:14px}
+.rangeRow output{font-family:var(--font-mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select,input[type=number],input[type=search]{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink);max-width:100%}
+@media (max-width:520px){.rangeRow{grid-template-columns:1fr 60px}.rangeRow label{grid-column:1/-1}}
+
+/* rules */
+.rules{counter-reset:r;list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;max-width:none}
+.rules li{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:0}
+.rules b{display:block;margin-bottom:2px}
+
+/* evidence ladder */
+.ladder{display:grid;gap:10px}
+.rung{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.rung .t{font-family:var(--font-display);font-size:22px;font-weight:700;text-transform:uppercase;line-height:1.1}
+.rung p{margin:0}
+@media (max-width:560px){.rung{grid-template-columns:1fr;gap:4px}}
+
+/* features */
+details.feat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px}
+details.feat summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto auto 18px;gap:12px;align-items:center;padding:14px 16px}
+details.feat summary::-webkit-details-marker{display:none}
+details.feat summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);justify-self:center;margin-top:-4px}
+details.feat[open] summary::after{transform:rotate(-135deg);margin-top:4px}
+.fid{font:500 13px var(--font-mono);color:var(--mute)}
+.fname{font-family:var(--font-display);font-size:24px;font-weight:700;line-height:1.1}
+.hrs{font:500 13px var(--font-mono);color:var(--mute)}
+@media (max-width:560px){details.feat summary{grid-template-columns:auto 1fr 18px}.badge,.hrs{grid-column:2}.fname{font-size:21px}}
+.badge{font:500 12px var(--font-mono);padding:2px 8px;border-radius:99px;white-space:nowrap}
+.badge.must{background:var(--accent-soft);color:var(--accent)}
+.badge.should{background:var(--mark-soft);color:var(--warn)}
+.badge.could{background:var(--surface2);color:var(--mute);border:1px solid var(--line)}
+.featbody{padding:0 18px 18px;border-top:1px solid var(--line)}
+.featbody .lead{font-size:17px;margin-top:16px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px}
+.opt{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;background:var(--surface2);min-width:0}
+.opt.pick{border-color:var(--accent);background:var(--accent-soft)}
+.opt p{margin:6px 0 0;font-size:14.5px}
+.opt .tag{display:inline-block;font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:4px}
+.pro{color:var(--good);font-weight:600}.con{color:var(--bad);font-weight:600}
+.done{background:var(--good-soft);border-radius:var(--radius);padding:10px 14px;margin-top:6px}
+.done p{margin:0}
+
+/* labs */
+.lab{margin-bottom:18px}
+.lab h3{margin-bottom:6px}
+.svgbox{background:var(--surface2);border:1px solid var(--line);border-radius:var(--radius);padding:8px;margin:10px 0;overflow-x:auto}
+.svgbox svg{display:block;width:100%;min-width:320px;height:auto}
+.readout{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.strip{display:flex;gap:2px;margin:3px 0 10px;flex-wrap:wrap}
+.strip .c{width:14px;height:22px;border:2px solid var(--ink);border-radius:2px;position:relative}
+.strip .c.t{background:var(--ink)}
+.strip .c.w::after{content:"";position:absolute;left:-2px;right:-2px;bottom:-8px;height:4px;background:var(--bad);border-radius:2px}
+.striplabel{font:500 12px var(--font-mono);color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.bars{display:grid;gap:6px;margin-top:10px}
+.bar{display:grid;grid-template-columns:130px 1fr 54px;gap:10px;align-items:center;font-size:14px}
+.bar .track{background:var(--surface2);border:1px solid var(--line);height:14px;border-radius:99px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent)}
+.bar .fill.neg{background:var(--bad)}
+.bar .fill.pos{background:var(--good)}
+.bar span.v{font:500 13px var(--font-mono);text-align:right}
+@media (max-width:520px){.bar{grid-template-columns:1fr 54px}.bar .track{grid-column:1/-1;order:3}}
+.verdict{font-family:var(--font-display);font-size:30px;font-weight:700;text-transform:uppercase}
+
+/* edge cases */
+.edge{display:grid;gap:10px}
+.edge .card{padding:14px 16px}
+.edge h3{font-size:22px;margin-bottom:6px}
+.edge .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.edge .cols > div{min-width:0}
+.edge .cols p{margin:0;font-size:15px}
+.edge .lbl{font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--mute);display:block;margin-bottom:2px}
+@media (max-width:640px){.edge .cols{grid-template-columns:1fr}}
+
+/* tables */
+.tbl{overflow-x:auto;margin-bottom:14px}
+table{border-collapse:collapse;width:100%;min-width:520px;background:var(--surface);font-size:14.5px}
+th,td{text-align:left;padding:9px 12px;border:1px solid var(--line);vertical-align:top}
+th{background:var(--surface2);font-weight:600}
+
+/* architecture */
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-bottom:12px}
+.node{flex:1 1 120px;min-width:120px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;cursor:pointer}
+.node b{display:block;font-family:var(--font-display);font-size:20px;line-height:1.1}
+.node span{font-size:13px;color:var(--mute)}
+.node.on{border-color:var(--accent);background:var(--accent-soft)}
+.node:hover{border-color:var(--accent)}
+.nodepanel dl{display:grid;grid-template-columns:110px 1fr;gap:6px 14px;margin:0}
+.nodepanel dt{font:500 12px var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--mute);padding-top:3px}
+.nodepanel dd{margin:0}
+@media (max-width:520px){.nodepanel dl{grid-template-columns:1fr}}
+
+/* directions */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.dirpanel h3{margin-bottom:4px}
+.dirpanel dl{display:grid;grid-template-columns:130px 1fr;gap:8px 14px;margin:14px 0 0}
+.dirpanel dt{font:500 12px var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--mute);padding-top:3px}
+.dirpanel dd{margin:0}
+@media (max-width:520px){.dirpanel dl{grid-template-columns:1fr}}
+
+/* schedule */
+.pick-list{display:grid;gap:6px;margin:10px 0}
+.pick-list label{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:15px;cursor:pointer}
+.result{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px}
+.result b{display:block;font-family:var(--font-display);font-size:38px;line-height:1}
+.result span{font-size:13px;color:var(--mute)}
+.progress{height:10px;background:var(--surface2);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin:6px 0 14px}
+.progress i{display:block;height:100%;background:var(--good);width:0}
+.phase{margin-bottom:14px}
+.phase h3{font-size:24px}
+.phase label{display:flex;gap:10px;align-items:flex-start;margin:4px 0;cursor:pointer;font-size:15px}
+.phase label input{margin-top:5px}
+.stopmark{border-left:4px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 var(--radius) var(--radius) 0;margin:8px 0 16px}
+.stopmark p{margin:0}
+
+/* decisions */
+.q{margin-bottom:14px}
+.q h3{font-size:22px;margin-bottom:6px}
+.q label{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius);margin-bottom:6px;cursor:pointer;background:var(--surface);font-size:15px}
+.q label:hover{border-color:var(--accent)}
+.q label input{margin-top:5px}
+.q label .why{display:block;font-size:13.5px;color:var(--mute)}
+.summary{border:2px solid var(--accent);background:var(--surface);border-radius:var(--radius);padding:16px 18px;position:sticky;bottom:12px}
+.summary h3{margin-bottom:6px}
+.summary ul{margin:0}
+
+/* glossary */
+.gl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px}
+.gl .card{padding:12px 14px}
+.gl b{font-family:var(--font-display);font-size:20px;display:block}
+.gl p{margin:0;font-size:14.5px}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:var(--mute);font-size:14px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+
+<nav class="top" aria-label="Sections"><div class="in" id="nav"></div></nav>
+
+<header class="hero">
+  <div>
+    <div class="kicker">MVP plan · VIT Chennai · built around a full-time job</div>
+    <h1>Smart Parking Finder</h1>
+    <p class="lede">A web app that tells you which spots in a campus lot are free right now, so you stop driving to the far lot when there is one empty space hiding in a row of cars.</p>
+    <p class="muted small">This page explains the whole plan in plain English. Open the cards, move the sliders and click the parking lot. Your ticks and choices are saved in this browser only.</p>
+    <div class="stats">
+      <div class="stat"><b id="st-hours">25 h</b><span>smallest resume-ready version</span></div>
+      <div class="stat"><b id="st-weeks">5 wks</b><span>at 6 hours a week, with buffer</span></div>
+      <div class="stat"><b>0</b><span>permissions needed to start</span></div>
+    </div>
+  </div>
+  <div>
+    <div class="lotwrap">
+      <div class="lothead">
+        <div class="big"><span id="lot-free">1</span><small id="lot-of">free of 16</small></div>
+        <div class="msg" id="lot-msg"></div>
+      </div>
+      <div class="lrow" id="rowA"></div>
+      <div class="lane"></div>
+      <div class="lrow" id="rowB"></div>
+      <div class="lotbtns">
+        <button class="btn" id="lot-leave">A car leaves</button>
+        <button class="btn" id="lot-park">A car parks</button>
+        <button class="btn" id="lot-reset">Reset</button>
+      </div>
+    </div>
+    <p class="lotnote">This is the problem in one picture. Click any spot to flip it. The app's whole job is to keep this view true in real time.</p>
+  </div>
+</header>
+
+<!-- BIG PICTURE -->
+<section id="big-picture">
+  <div class="kicker">The big picture</div>
+  <h2>What we are building</h2>
+  <p class="intro">The system looks at a parking lot and decides, for every spot, one of three answers: <b>taken</b>, <b>free</b> or <b>unknown</b>. It shows that on a phone within a few seconds. It gets its answers from four kinds of evidence. We trust them in this order.</p>
+
+  <div class="ladder">
+    <div class="rung"><div class="t">1 · Camera</div><p><b>Strongest and automatic.</b> A camera looks at the lot. A computer vision model (software that finds objects in pictures) finds the cars. We compare each car with the spot shapes we drew in advance. Nobody has to do anything. The weakness is that it cannot see around corners, and it struggles at night or in heavy rain.</p></div>
+    <div class="rung"><div class="t">2 · Gate counts</div><p><b>Accurate in total, blind to location.</b> Counters at the entrances of each aisle or bay note every car that comes in or goes out. "Cars in minus cars out" tells you how many cars are inside, even where no camera can see. If the cameras account for 76 cars and the counters say 93 are inside, the other 17 are probably in hidden spots (Lab 4). The weakness is drift: small counting mistakes pile up, so the count must be reset now and then.</p></div>
+    <div class="rung"><div class="t">3 · People</div><p><b>Useful, but they fade.</b> A student taps "Row C has a free spot" or "Row C is full". When a hidden spot is still uncertain, the app can also ask someone nearby a question: "Is the spot behind the pillar free?". Because people forget and sometimes get it wrong, every answer loses weight as it gets older, and the camera always wins an argument if it is fresh.</p></div>
+    <div class="rung"><div class="t">4 · Patterns</div><p><b>Weakest, a guess, and built last.</b> From past data we learn that Tuesday at 9:45 is usually packed. This is the only evidence that works when the camera is off and nobody has reported anything.</p></div>
+  </div>
+
+  <h4>What the MVP deliberately does not do</h4>
+  <p>No hardware sensors, no user accounts, no iPhone or Android app, no navigation, no payments, no real campus pilot at first, no heavy model training, and no automatic discovery of spots from painted lines. Each of these is a good idea and a time sink. Leaving them out is how a project finishes.</p>
+
+  <h4>Working rules for a busy person</h4>
+  <ul class="rules">
+    <li><b>Always end a session with something that runs.</b>Even if it is ugly. Never stop in the middle of a half-built piece.</li>
+    <li><b>Time-box everything.</b>Work in 90-minute blocks. If you are stuck for 30 minutes, write down where, and switch to something else.</li>
+    <li><b>Fake it first, make it real later.</b>Use a recorded video instead of a live camera. Use a simulator instead of real users. The pipeline is identical.</li>
+    <li><b>Numbers beat adjectives.</b>"93% accurate on 500 test images" is worth more than "works well". Measure early, so you only brag about true things.</li>
+    <li><b>Park the project during interview crunch.</b>Keep a "Status" section at the top of the README so you can pick it up again in two weeks without re-reading the code.</li>
+    <li><b>Stop tuning when it is good enough.</b>Report your results honestly, including where it fails. That reads as more senior than a perfect number.</li>
+  </ul>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="kicker">Features</div>
+  <h2>The twelve pieces</h2>
+  <p class="intro">Each card explains what the piece is, why it exists, how to build it, your realistic options with their trade-offs, the edge cases (unusual situations that break naive code), and how you know it is finished. Hours are rough estimates for one person.</p>
+  <div class="chips" id="feat-filter">
+    <button class="btn on" data-f="all">All</button>
+    <button class="btn" data-f="must">Must have</button>
+    <button class="btn" data-f="should">Should have</button>
+    <button class="btn" data-f="could">Nice to have</button>
+    <button class="btn" id="feat-toggle" style="margin-left:auto">Expand all</button>
+  </div>
+  <div id="feat-list"></div>
+</section>
+
+<!-- LABS -->
+<section id="hands-on">
+  <div class="kicker">Hands-on</div>
+  <h2>Four ideas you can play with</h2>
+  <p class="intro">These are the four bits of logic that most people find confusing. They happen in this order inside the system: find the car, avoid flickering, mix the evidence, then use the gate count to estimate what no camera can see.</p>
+
+  <div class="card lab">
+    <h3>Lab 1 · Is that car in this spot?</h3>
+    <p>The detector draws a box around each car. We draw a shape around each spot. To decide whether a spot is taken, we measure how much of the spot the car box covers. This is called <b>overlap</b> (the formal version, which also divides by the car's own area, is called IoU, intersection over union). Drag the car and move the threshold.</p>
+    <div class="svgbox">
+      <svg viewBox="0 0 520 230" role="img" aria-label="Three parking spots with a car box that can be moved across the middle one">
+        <rect x="0" y="0" width="520" height="230" fill="var(--surface2)"/>
+        <rect x="20" y="60" width="140" height="100" fill="none" stroke="var(--mute)" stroke-width="2" stroke-dasharray="6 5"/>
+        <rect x="190" y="60" width="140" height="100" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.5"/>
+        <rect x="360" y="60" width="140" height="100" fill="none" stroke="var(--mute)" stroke-width="2" stroke-dasharray="6 5"/>
+        <text x="260" y="52" text-anchor="middle" font-size="14" fill="var(--ink)" font-family="IBM Plex Mono, monospace">A-07</text>
+        <text x="90" y="52" text-anchor="middle" font-size="12" fill="var(--mute)" font-family="IBM Plex Mono, monospace">A-06</text>
+        <text x="430" y="52" text-anchor="middle" font-size="12" fill="var(--mute)" font-family="IBM Plex Mono, monospace">A-08</text>
+        <rect id="ov-car" x="200" y="70" width="120" height="80" rx="8" fill="var(--car2)" fill-opacity=".75" stroke="var(--ink)" stroke-width="2"/>
+        <text id="ov-cartxt" x="260" y="115" text-anchor="middle" font-size="13" fill="var(--ink)" font-family="IBM Plex Mono, monospace">car box</text>
+      </svg>
+    </div>
+    <div class="rangeRow"><label for="ov-x">Car sideways</label><input id="ov-x" type="range" min="-170" max="170" value="0"><output id="ov-xo"></output></div>
+    <div class="rangeRow"><label for="ov-y">Car up or down</label><input id="ov-y" type="range" min="-60" max="60" value="0"><output id="ov-yo"></output></div>
+    <div class="rangeRow"><label for="ov-t">Threshold</label><input id="ov-t" type="range" min="20" max="80" value="50"><output id="ov-to"></output></div>
+    <div class="readout">
+      <span>Car covers <b id="ov-pct">0%</b> of A-07</span>
+      <span class="verdict" id="ov-verdict">taken</span>
+    </div>
+    <p class="muted small" style="margin-top:10px">Low threshold: a car in the next spot leans over the line and marks this one taken by mistake. High threshold: a car parked crooked still counts as free. Slide the car to the edge to see both. Real spots are slanted shapes, so the code uses a geometry library called <code>shapely</code> for the maths. When one car overlaps two spots, give it to the spot with the larger overlap.</p>
+  </div>
+
+  <div class="card lab">
+    <h3>Lab 2 · Why the app must not trust one picture</h3>
+    <p>The camera checks a spot every 5 seconds. A car drives past (frames 6 and 7), and the model misses the parked car a few times later. If the app changes its answer on every reading, the colour flickers and nobody trusts it. The fix is <b>hysteresis</b>: only change the answer after the new reading repeats <i>M times in a row</i>. A filled box means taken. An empty box means free. A red bar under a box means that box is wrong.</p>
+    <div class="rangeRow"><label for="sm-m">Readings in a row (M)</label><input id="sm-m" type="range" min="1" max="6" value="3"><output id="sm-mo"></output></div>
+    <div class="striplabel">Truth (a car parks at frame 13)</div><div class="strip" id="sm-truth"></div>
+    <div class="striplabel">Raw camera readings</div><div class="strip" id="sm-raw"></div>
+    <div class="striplabel">What the app shows</div><div class="strip" id="sm-out"></div>
+    <div class="readout">
+      <span class="pill" id="sm-wrong"></span>
+      <span class="pill" id="sm-delay"></span>
+    </div>
+    <p class="muted small" style="margin-top:10px">Try M = 1: it is fast but flickers. Try M = 2: still fooled by two bad readings in a row. Try M = 6: it is calm but slow to notice that a car left. Your job is to pick the value that a driver would tolerate. About 30 seconds of delay is fine for people. A few wrong flips is not.</p>
+  </div>
+
+  <div class="card lab">
+    <h3>Lab 3 · Mixing the camera with what people say</h3>
+    <p>Each piece of evidence is a vote. Its strength is its starting weight multiplied by a fade factor, <code>e^(−age ÷ τ)</code>. Here τ ("tau") is the time scale: after one τ the weight has dropped to about 37%. The camera votes strongly and fades over minutes. A person's report votes weakly and fades faster. We add the votes up and turn the total into a probability (that is what the "sigmoid" does). Set up a situation and see who wins.</p>
+    <div class="grid2">
+      <div>
+        <div class="rangeRow"><label for="fx-cam">Camera says</label><select id="fx-cam"><option value="taken">taken</option><option value="free">free</option><option value="off">offline / cannot see</option></select><span></span></div>
+        <div class="rangeRow"><label for="fx-camage">Camera reading age</label><input id="fx-camage" type="range" min="0" max="10" step="0.5" value="0.5"><output id="fx-camageo"></output></div>
+      </div>
+      <div>
+        <div class="rangeRow"><label for="fx-rep">A person says</label><select id="fx-rep"><option value="free" selected>free</option><option value="taken">taken</option><option value="none">nobody reported</option></select><span></span></div>
+        <div class="rangeRow"><label for="fx-repage">Report age</label><input id="fx-repage" type="range" min="0" max="30" step="1" value="2"><output id="fx-repageo"></output></div>
+      </div>
+    </div>
+    <div class="bars" id="fx-bars"></div>
+    <div class="readout"><span class="verdict" id="fx-verdict"></span><span class="pill" id="fx-p"></span></div>
+    <p class="muted small" style="margin-top:10px" id="fx-why"></p>
+    <p class="muted small">Try this: camera says taken, a fresh report says free. The camera wins. Now make the camera reading 8 minutes old, or set it to offline. The report takes over. That is the whole idea of fusion. These weights (4, 1.5, and the time scales 3 and 8 minutes) are starting guesses. You will tune them with the simulator in feature F7.</p>
+  </div>
+
+  <div class="card lab">
+    <h3>Lab 4 · What the gate count says about hidden spots</h3>
+    <p>Some spots sit behind pillars or trees, so no camera sees them. The gate counters still know how many cars came in minus how many went out. If the cameras account for most of those cars, the rest must be in the hidden spots. It is the same bookkeeping as counting heads against seats in a cinema. Change the numbers and watch the estimate move.</p>
+    <div class="rangeRow"><label for="l4-hidden">Hidden spots</label><input id="l4-hidden" type="range" min="0" max="60" value="20"><output id="l4-hiddeno"></output></div>
+    <div class="rangeRow"><label for="l4-inside">Cars inside (gate count)</label><input id="l4-inside" type="range" min="0" max="200" value="93"><output id="l4-insideo"></output></div>
+    <div class="rangeRow"><label for="l4-seen">Taken spots the cameras see</label><input id="l4-seen" type="range" min="0" max="200" value="76"><output id="l4-seeno"></output></div>
+    <div class="rangeRow"><label for="l4-circ">Cars driving around</label><input id="l4-circ" type="range" min="0" max="20" value="3"><output id="l4-circo"></output></div>
+    <div class="rangeRow"><label for="l4-drift">Counting error (± cars)</label><input id="l4-drift" type="range" min="0" max="15" value="3"><output id="l4-drifto"></output></div>
+    <div class="readout"><span class="pill acc" id="l4-un"></span><span class="pill" id="l4-taken"></span><span class="pill good" id="l4-free"></span></div>
+    <div class="readout"><span class="verdict" id="l4-verdict"></span></div>
+    <p class="muted small" style="margin-top:10px">Try this: raise the counting error to 10 and the answer turns into "not sure". That is the moment the app should ask someone nearby. Also remember that the count only means something relative to a known starting point (a baseline), and that small mistakes pile up over time, so the baseline must be reset now and then.</p>
+  </div>
+</section>
+
+<!-- EDGE CASES -->
+<section id="edge">
+  <div class="kicker">Edge cases</div>
+  <h2>What will go wrong</h2>
+  <p class="intro">An edge case is an unusual situation your code has to survive. Real software is mostly edge cases. Reading this list now is cheaper than discovering these after you deploy. You do not have to solve all of them. Pick the ones you will solve, and write the others in the README under "Known limits".</p>
+  <div class="chips" id="edge-filter"></div>
+  <div class="edge" id="edge-list"></div>
+</section>
+
+<!-- TESTING -->
+<section id="testing">
+  <div class="kicker">Testing</div>
+  <h2>How you know it works</h2>
+  <p class="intro">You cannot easily park 50 cars to test this, and you do not need to. Instead you test it in layers. The cheap, fast layers catch most bugs. The slow, realistic layers prove the whole thing hangs together.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Layer</th><th>What it checks</th><th>How</th><th>Runs</th></tr></thead>
+    <tbody>
+      <tr><td><b>Unit tests</b></td><td>Small pieces of logic: overlap maths, the M-in-a-row rule, the fade formula, rejecting bad API input.</td><td><code>pytest</code>, with inputs and expected answers written by hand.</td><td>Every commit, seconds</td></tr>
+      <tr><td><b>Detector evaluation</b></td><td>How often the model gets a spot right, split by weather.</td><td>Public dataset (PKLot) with known answers. Count mistakes. A fixed set of about 50 "golden" images stays in the repo to catch regressions.</td><td>On demand, minutes</td></tr>
+      <tr><td><b>Replay test</b></td><td>The whole pipeline from picture to API to state. "A car leaves at 0:42, so the spot must show free by 1:15."</td><td>Feed a recorded video in place of a live camera. Check the timeline.</td><td>On demand</td></tr>
+      <tr><td><b>Fusion simulation</b></td><td>Whether mixing camera and reports beats camera alone, and how the weights should be tuned.</td><td>A script that invents a lot's true history, adds noisy camera readings and random reports, and measures the error.</td><td>On demand</td></tr>
+      <tr><td><b>End-to-end smoke test</b></td><td>That the shipped package starts and works at all.</td><td><code>docker compose up</code>, post one observation, check a browser receives the update.</td><td>In CI</td></tr>
+      <tr><td><b>Load test</b></td><td>That 200 to 500 phones watching at once does not break the server.</td><td>A tool such as <code>k6</code> or <code>locust</code> opens many connections. Record the p95 response time (the time within which 95 out of 100 requests finish).</td><td>Once, before release</td></tr>
+      <tr><td><b>Counting test</b></td><td>That the gate counter finds the right number of crossings, and how fast it drifts.</td><td>Traffic-camera footage where you count the cars by hand. Compare totals over 10 minutes, then over an hour. Public vehicle-tracking datasets also exist; check their licences.</td><td>On demand</td></tr>
+      <tr><td><b>Multi-camera replay</b></td><td>That several bays combine correctly, and that one dead camera shows as unknown, not wrong.</td><td>Replay three or more dataset cameras at once, then stop one.</td><td>On demand, then in CI</td></tr>
+      <tr><td><b>Real-world check</b></td><td>That it works outside the dataset.</td><td>One 10-minute clip you film yourself, or toy cars on a printed grid. Label by hand and compare.</td><td>Once</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Metrics calculator</h3>
+      <p>"Accuracy" alone is misleading when most spots are taken. Enter counts for a test run of 100 spots. Treat <b>free</b> as the thing we are looking for.</p>
+      <div class="rangeRow"><label for="m-tp">Free, said free</label><input id="m-tp" type="number" min="0" value="18"><span class="muted small">TP</span></div>
+      <div class="rangeRow"><label for="m-fp">Taken, said free</label><input id="m-fp" type="number" min="0" value="3"><span class="muted small">FP</span></div>
+      <div class="rangeRow"><label for="m-fn">Free, said taken</label><input id="m-fn" type="number" min="0" value="2"><span class="muted small">FN</span></div>
+      <div class="rangeRow"><label for="m-tn">Taken, said taken</label><input id="m-tn" type="number" min="0" value="77"><span class="muted small">TN</span></div>
+      <div class="readout"><span class="pill acc" id="m-acc"></span><span class="pill good" id="m-prec"></span><span class="pill warn" id="m-rec"></span></div>
+      <div class="lotbtns" style="margin-top:12px"><button class="btn" id="m-lazy">Try a lazy detector that always says "taken"</button></div>
+      <p class="muted small" style="margin-top:10px"><b>Accuracy</b> = right answers out of all. <b>Precision</b> = when it says free, how often it is truly free (a low value sends people to a taken spot). <b>Recall</b> = of all truly free spots, how many it found (a low value hides the empty spot, which is your original problem). The lazy detector scores 80% accuracy and 0% recall. That is why we report recall.</p>
+    </div>
+    <div class="card">
+      <h3>Targets to aim for</h3>
+      <p>These are hypotheses to confirm or revise after your first evaluation run. They are not promises, and the first honest result might be lower.</p>
+      <ul>
+        <li><b>Free-spot recall:</b> 90% or better on daytime images.</li>
+        <li><b>Per-spot accuracy:</b> 90% or better, reported separately for sunny, cloudy and rainy.</li>
+        <li><b>Update delay:</b> under about 30 seconds from a car leaving to the app showing free. This is set by the M-in-a-row rule, not by compute.</li>
+        <li><b>API p95 response:</b> under 200 ms for reading the lot state.</li>
+        <li><b>Stale data:</b> any spot with no fresh evidence for 2 minutes shows "unknown".</li>
+        <li><b>Gate count:</b> within a few cars of the truth after a 10-minute test video, with the drift rate measured and reported.</li>
+      </ul>
+      <h4>Where to get test data</h4>
+      <ul>
+        <li><b>PKLot</b> and <b>CNRPark+EXT</b>: public datasets of parking-lot images with every spot labelled free or occupied. Check each licence and size before downloading, and credit them in the README. They come from other countries and camera angles, so say so in your limits.</li>
+        <li>Several different dataset cameras, to build the pretend campus.</li>
+        <li>Traffic or road-camera footage with a visible entrance, for the gate counter.</li>
+        <li>A short clip you film yourself, for reality.</li>
+        <li>Toy cars on a printed grid, for a controlled demo.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="together">
+  <div class="kicker">Putting it together</div>
+  <h2>How the pieces connect</h2>
+  <p class="intro">Data flows left to right. Click any box to see what goes in, what comes out, how it breaks, and how you test it. One design choice matters: the detector is kept "dumb". It only reports what it saw. All the thinking (smoothing, mixing reports, fading) lives in one place on the server, so there is a single source of truth.</p>
+  <div class="flow" id="flow"></div>
+  <div class="card nodepanel" id="nodepanel"></div>
+
+  <div class="grid2" style="margin-top:14px">
+    <div>
+      <h4>The messages (the "contract")</h4>
+      <p class="small muted">Write these down before coding. If the worker and the server agree on the shape, you can build and test them separately.</p>
+<pre><code>POST /api/lots/vit-gate2/observations
+{
+  "camera_id": "cam1",
+  "captured_at": "2026-11-02T09:41:07Z",
+  "slots": [
+    { "slot_id": "A-01", "occupied_prob": 0.93, "visible": true },
+    { "slot_id": "A-02", "occupied_prob": 0.04, "visible": true }
+  ]
+}
+
+POST /api/lots/vit-gate2/counts
+{ "line_id": "bayA-in-1", "direction": "in",
+  "crossed_at": "2026-11-02T09:41:03Z" }
+
+POST /api/lots/vit-gate2/reports
+{ "zone": "A", "state": "free", "device_id": "anon-8f3c" }
+
+GET  /api/lots/vit-gate2/questions       -> open questions
+POST /api/lots/vit-gate2/questions/17/answer
+{ "state": "free", "device_id": "anon-8f3c" }
+
+GET /api/lots/vit-gate2          -> current state of every slot
+GET /api/lots/vit-gate2/stream   -> live updates (SSE)
+  event: slot_update
+  data: {"slot_id":"A-14","state":"free","confidence":0.82,
+         "updated_at":"2026-11-02T09:41:12Z"}</code></pre>
+    </div>
+    <div>
+      <h4>Suggested folders</h4>
+<pre><code>smart-parking-finder/
+  data/        lot JSON files, a few sample frames
+  worker/      detect.py, geometry.py, counter.py, run_worker.py
+  replay/      streams dataset images as fake cameras
+  api/         main.py, state_engine.py, models.py
+  web/         React + TypeScript app with a map
+  eval/        run.py, report.md  (your accuracy table)
+  sim/         fusion_sim.py      (the simulator)
+  tests/
+  docker-compose.yml
+  README.md    status, results, limits, demo video</code></pre>
+      <h4>The data model</h4>
+<pre><code>Lot (the whole VIT main parking)
+ └─ Bay (one section of it)
+     ├─ Camera   (each has its own spot file)
+     │   └─ Spot (main camera, optional backup)
+     └─ Counting line (in or out, at an aisle or bay entrance)
+
+Spot state = free | taken | unknown + confidence + last confirmed
+Bay total  = sum of its spots + an estimate for hidden spots</code></pre>
+      <h4>Where does the detector run?</h4>
+      <p class="small">YOLO needs real CPU power, and free hosting is weak. The practical answer is to run the workers (one per camera) on your laptop (or a small rented machine) and let it send the light JSON messages to a hosted API. The public demo can also replay a recorded observation file, so a recruiter can open it at any time without your laptop on. This is called <b>edge inference</b>: the heavy work happens near the camera, and only small results travel.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DIRECTIONS -->
+<section id="directions">
+  <div class="kicker">Directions</div>
+  <h2>Three ways to spend your hours</h2>
+  <p class="intro">All three use the same core. They differ in where you invest the extra effort, and so in the story you tell afterwards. Pick one, or take A and borrow a small piece of C.</p>
+  <div class="tabs" id="dir-tabs"></div>
+  <div class="card dirpanel" id="dir-panel"></div>
+
+  <h4>Things you will be able to say in interviews</h4>
+  <ul>
+    <li><b>Why SSE and not WebSockets?</b> Updates only flow server to browser. SSE does that over plain HTTP and the browser reconnects by itself, so there is less to build and fewer things to break.</li>
+    <li><b>How do you deal with bad data?</b> Hysteresis against flicker, a time limit after which evidence expires into "unknown", and a rule that fresh camera data beats old reports.</li>
+    <li><b>How did you measure it, and what did you choose to report?</b> Recall of free spots, split by weather, because missing an empty spot is the exact problem users have.</li>
+    <li><b>What breaks at 100 lots?</b> Detection cost grows with cameras (batch it, or use a queue and several workers). Database writes grow too (store only changes, and delete old observations). Fan-out to many phones grows (cache the current state, and partition by lot).</li>
+    <li><b>What about privacy?</b> Frames are processed in memory and thrown away. Only slot states leave the worker. No plates, no faces, no stored video.</li>
+  </ul>
+</section>
+
+<!-- SCHEDULE -->
+<section id="schedule">
+  <div class="kicker">Schedule</div>
+  <h2>How long will it take?</h2>
+  <p class="intro">Tick the features you want, set how many hours you can really spare each week, and see an estimate. The buffer exists because projects almost always take longer than planned.</p>
+  <div class="card">
+    <div class="pick-list" id="sc-list"></div>
+    <div class="rangeRow"><label for="sc-hpw">Hours per week</label><input id="sc-hpw" type="range" min="2" max="15" value="6"><output id="sc-hpwo"></output></div>
+    <div class="rangeRow"><label for="sc-buf">Add 30% buffer</label><input id="sc-buf" type="checkbox" checked><span></span></div>
+    <div class="result">
+      <div><b id="sc-h">0</b><span>hours of work</span></div>
+      <div><b id="sc-w">0</b><span>weeks</span></div>
+      <div><b id="sc-d">-</b><span>finish if you start today</span></div>
+    </div>
+    <p class="muted small" style="margin-top:12px" id="sc-note"></p>
+  </div>
+
+  <h3 style="margin-top:28px">Build order and checklist</h3>
+  <p class="small muted">Each phase ends with something that runs. <span id="ph-count"></span></p>
+  <div class="progress"><i id="ph-bar"></i></div>
+  <div id="phases"></div>
+</section>
+
+<!-- WEEK 1 -->
+<section id="week1">
+  <div class="kicker">Week 1</div>
+  <h2>Your first week</h2>
+  <p class="intro">The goal is small on purpose. By the end of the week, one command prints a table showing how well a pretrained detector finds free and taken spots on real parking-lot images. There is no server, database or map yet. This is the first part of Phase 1, about 6 hours in four sessions, and it tests the biggest risk first: can the detector see the spots?</p>
+  <div class="grid3">
+    <div class="card"><h3>Time</h3><p>Four sessions of 60 to 105 minutes. Put them in your calendar today, for example two weekday evenings and the weekend.</p></div>
+    <div class="card"><h3>You will have</h3><p>A repo, real images, correct spot shapes, a detector that colours each spot, and your first accuracy table.</p></div>
+    <div class="card"><h3>Not this week</h3><p>No React, no database, no map, no model training, no camera permissions, and no tuning beyond one threshold.</p></div>
+  </div>
+  <h4>Before session 1 (10 minutes)</h4>
+  <ul>
+    <li>Check that you have Python 3.11 or newer and about 10 GB of free disk space.</li>
+    <li>Create an empty private repo on GitHub. You can make it public later.</li>
+    <li>Block the four sessions in your calendar. A session that is not scheduled usually does not happen.</li>
+  </ul>
+  <div class="progress" style="margin-top:20px"><i id="wk-bar"></i></div>
+  <p class="small muted" id="wk-count"></p>
+  <div id="wk-list"></div>
+  <h4>Starter commands for session 3</h4>
+<pre><code>python3 -m venv .venv
+source .venv/bin/activate
+pip install ultralytics shapely opencv-python pytest</code></pre>
+  <p class="small muted">Check the library's own documentation for the current model name and install steps. Names and versions change.</p>
+  <div class="grid2">
+    <div class="card"><h3>If you only get 3 hours</h3><p>Do sessions 1 and 2. You will have the data and verified spot shapes, which are the parts that are easy to get wrong. The detector moves to next week.</p></div>
+    <div class="card"><h3>Week 2 preview</h3><p>The slot state rule (hysteresis) with tests, a FastAPI server with a Postgres database in Docker, and a worker that replays images and posts results. A React page comes after that.</p></div>
+  </div>
+</section>
+
+<!-- DECISIONS -->
+<section id="decide">
+  <div class="kicker">Decisions</div>
+  <h2>Choices to lock before you build</h2>
+  <p class="intro">Answer these, and your plan is decided. The suggested option is marked, with the reason. Some answers are already filled in from what you told me, so change anything you disagree with. Your answers are summarised at the bottom and saved in this browser.</p>
+  <div id="qs"></div>
+  <div class="summary" id="summary" aria-live="polite"></div>
+</section>
+
+<!-- GLOSSARY -->
+<section id="glossary">
+  <div class="kicker">Glossary</div>
+  <h2>Words used on this page</h2>
+  <div class="chips"><input type="search" id="gl-q" placeholder="Search a term" aria-label="Search glossary" style="min-width:min(100%,260px)"></div>
+  <div class="gl" id="gl"></div>
+</section>
+
+<footer>
+  <p>Things to check yourself before relying on them: dataset sizes and licences (PKLot, CNRPark+EXT), the licence of the detector library you pick (Ultralytics YOLO is AGPL-3.0, which is fine for an open-source portfolio project but matters if you ever close the source), and current free-tier limits of any host. Hour estimates are rough guesses for one person and will change after your first phase.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const store={get(k,d){try{const v=localStorage.getItem('pf_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('pf_'+k,JSON.stringify(v))}catch(e){}}};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PRI={must:'Must have',should:'Should have',could:'Nice to have'};
+
+/* ---------- nav ---------- */
+const NAV=[['big-picture','Big picture'],['features','Features'],['hands-on','Hands-on'],['edge','Edge cases'],['testing','Testing'],['together','Putting it together'],['directions','Directions'],['schedule','Schedule'],['week1','Week 1'],['decide','Decide'],['glossary','Glossary']];
+$('#nav').innerHTML=NAV.map(n=>`<button data-go="${n[0]}">${n[1]}</button>`).join('');
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=document.getElementById(b.dataset.go);if(t)t.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'})});
+
+/* ---------- hero lot ---------- */
+const N=16; let lot=[];
+function lotReset(){lot=Array(N).fill(true);lot[11]=false;lotDraw()}
+function slotName(i){return (i<8?'A':'B')+((i%8)+1)}
+function lotDraw(){
+  [['rowA',0],['rowB',8]].forEach(([id,off])=>{
+    $('#'+id).innerHTML=Array.from({length:8},(_,k)=>{const i=off+k,t=lot[i];
+      return `<button class="slot" data-i="${i}" aria-pressed="${t}" aria-label="Spot ${slotName(i)}, ${t?'taken':'free'}. Click to change.">${t?`<span class="car" style="--c:var(--car${(i*3)%5+1})"></span>`:`<span class="free">FREE</span>`}<span class="sl">${slotName(i)}</span></button>`}).join('');
+  });
+  const free=lot.filter(x=>!x).length;
+  $('#lot-free').textContent=free; $('#lot-of').textContent='free of '+N;
+  const names=lot.map((t,i)=>t?null:slotName(i)).filter(Boolean);
+  $('#lot-msg').textContent=free===0?'LOT FULL':(free===1?'Go to '+names[0]:'Free: '+names.slice(0,5).join(', ')+(names.length>5?'…':''));
+}
+$('.lotwrap').addEventListener('click',e=>{const b=e.target.closest('.slot');if(!b)return;const i=+b.dataset.i;lot[i]=!lot[i];lotDraw()});
+$('#lot-leave').onclick=()=>{const idx=lot.map((t,i)=>t?i:-1).filter(i=>i>=0);if(idx.length){lot[idx[Math.floor(Math.random()*idx.length)]]=false;lotDraw()}};
+$('#lot-park').onclick=()=>{const idx=lot.map((t,i)=>t?-1:i).filter(i=>i>=0);if(idx.length){lot[idx[Math.floor(Math.random()*idx.length)]]=true;lotDraw()}};
+$('#lot-reset').onclick=lotReset; lotReset();
+
+/* ---------- features data ---------- */
+const FEATS=[
+{id:'F1',name:'Spot map (one file per camera)',pri:'must',hours:3,
+ plain:'The app has to know where each parking spot is in the camera picture. We draw a shape around every spot (a polygon, which is just a list of corner points) and give it a name like A-01. The result is a small JSON file, one per camera.',
+ why:'Every later step asks "is there a car inside this shape?". With no shapes there are no answers.',
+ how:['Take one frame from a dataset image or from your test video.','Build a small React screen that shows the picture. You click the four corners of one spot, type its name, and repeat for every spot. Pressing export downloads the saved corner positions. Later this becomes the "add a camera" screen of the real product. (Or use an existing labelling tool and convert its output.)','Save the result as a file such as <code>data/bayA-cam1.json</code> with the camera id, the image size, and for each spot: id, corner points, zone (the row), and type (car or bike).','Write a preview script that draws the shapes and names over the picture, so you can check them by eye.'],
+ options:[
+  {name:'Click-to-draw screen in your own React app',pick:1,pro:'Full control, about 3 hours, and it becomes the real "add a camera" screen. A good product-engineering story.',con:'Tedious if a camera sees 100 or more spots.'},
+  {name:'Use an existing labelling tool (labelme, CVAT, VIA)',pro:'Nothing to build.',con:'You must convert its export format to yours.'},
+  {name:'Find spots automatically from the painted lines',pro:'Impressive if it works.',con:'Fragile in the real world, and a deep time sink. Skip it for the MVP.'},
+  {name:'Convert dataset labels (PKLot already has them)',pro:'Zero drawing for evaluation images.',con:'Only for the dataset, so you still need the click tool for your own footage.'}],
+ edge:['A spot partly hidden behind a tree or pillar: store a <code>visible</code> flag and report "unknown" when too little of it is visible.','Unmarked parking with no painted lines: draw zones (rows) and count cars per zone instead of per spot.','Bike bays and car spots look different: give each spot a type.','The camera gets nudged later: save a reference picture so the worker can notice that the picture no longer matches.'],
+ done:'One JSON file for one lot, drawn over its picture in a preview with every spot id readable.'},
+
+{id:'F2',name:'Detection engine',pri:'must',hours:5,
+ plain:'Takes a picture and answers, for every spot, "taken", "free" or "cannot tell", plus a confidence number between 0 and 1.',
+ why:'This is the heart of the product. Everything else only stores, smooths or displays what this produces.',
+ how:['Load a frame and the spot shapes from F1.','Run a pretrained object detector (YOLO is a popular one that draws boxes around objects). Keep only the classes car, motorcycle, bus and truck.','For each spot, compute how much of it is covered by any box (Lab 1). Above the threshold means taken.','Output one record per spot: id, occupied probability, visible. Draw a debug image so you can see what the model saw.'],
+ options:[
+  {name:'Find cars, then check overlap with each spot',pick:1,pro:'No training. Works on any lot and any camera angle. Quick to build.',con:'Struggles when cars hide each other, with tiny far-away cars, and at night. Check the library licence (Ultralytics is AGPL-3.0).'},
+  {name:'Classify a cropped picture of each spot',pro:'Small and fast. Copes well with partial hiding because it only looks inside the spot. This is the classic approach on PKLot.',con:'You must train it. It may fail on a new camera unless you train for that camera.'},
+  {name:'Compare with a picture of the empty lot',pro:'No AI at all. Very light.',con:'Breaks with shadows, rain and changing light. Needs a clean empty picture.'}],
+ edge:['A big vehicle covers two spots: give it to the one with more overlap, and mark the neighbour "blocked".','A car parked across the line.','Scooters and motorcycles: COCO, the dataset the model was trained on, has a motorcycle class, but check that it works on your footage.','Far-away cars appear tiny: run the model at a larger image size, or slice the picture into tiles.','Night or glare: lower the confidence and return "unknown" instead of guessing "free".'],
+ done:'A script that takes any image and prints and draws the state of every spot.'},
+
+{id:'F3',name:'Evaluation harness',pri:'must',hours:5,
+ plain:'A script that grades the detector. You give it pictures where the right answers are already known, and it counts the mistakes.',
+ why:'Without numbers, "it works" is an opinion. This is also the single most useful thing on your resume: a small table with real results.',
+ how:['Download a sample of a labelled dataset (a few hundred images is enough).','Convert its labels into your spot format.','Run F2 on every image and compare with the labels.','Compute accuracy, precision and recall (see the calculator in Testing), split by lot and by weather.','Write the table to <code>eval/report.md</code> and save a handful of failure pictures so you can see why it fails.'],
+ options:[
+  {name:'Evaluate on a sample of about 500 images',pick:1,pro:'Quick, small download, enough to quote.',con:'A little noisy. Say how many images you used.'},
+  {name:'Evaluate on the full dataset',pro:'Stronger claim.',con:'Large download and long runs. Poor use of limited hours.'},
+  {name:'Report each lot separately and compare',pick:1,pro:'A pretrained detector has never seen your lots, so every lot is already a test on a new place. Shows how well it carries over.',con:'Needs images from at least two or three lots.'},
+  {name:'Train on one lot, test on another (see F12)',pro:'The classic way to test a model you trained yourself on a new place.',con:'Only meaningful if you train something. Capped at about 8 hours in F12.'}],
+ edge:['Label formats differ between datasets: write a small converter and test it.','Most spots are taken at peak hours, so accuracy looks great even for a useless model. Always report recall of free spots.','Some labels count a half-hidden car as taken. Note it, because it explains some of your "errors".'],
+ done:'<code>python eval/run.py</code> prints a table and writes it to <code>eval/report.md</code>.'},
+
+{id:'F4',name:'Slot state: smoothing, then probability',pri:'must',hours:3,
+ plain:'One picture can be wrong, so a spot only changes state after the new answer repeats a few times in a row (Lab 2). Each spot also remembers when it was last confirmed.',
+ why:'It removes flicker and makes the app trustworthy. It also gives you a place to say "unknown" when the data is old.',
+ how:['Write a small state machine for one spot: states taken, free, unknown.','Add the M-in-a-row rule.','Add a time limit: no fresh evidence for 2 minutes becomes unknown.','Cover it with unit tests that replay a list of readings.'],
+ options:[
+  {name:'First: M readings in a row (hysteresis)',pick:1,pro:'Easy to explain, easy to test.',con:'Adds a fixed delay.'},
+  {name:'Majority vote over the last N readings',pro:'Handles scattered errors well.',con:'Slower to react, and N and the cut-off are two numbers to tune.'},
+  {name:'Later: a probability per spot, updated with each reading',pick:1,pro:'More real-time, and it merges naturally with gate counts and reports. Run the same replay through both versions and compare them. That comparison is a good README result.',con:'Harder to debug. Keep hysteresis as the baseline, and put both behind the same interface so you can swap them.'}],
+ edge:['The first reading after a restart.','The camera freezes and keeps sending the same picture: add a check that consecutive pictures differ at least slightly.','Readings arrive out of order: compare timestamps and ignore older ones.'],
+ done:'Hysteresis version: unit tests pass, and a replay of a noisy sequence shows no flicker. The probability version is an extra of about 3 hours, scheduled in the last phase.'},
+
+{id:'F5',name:'Backend API and live updates',pri:'must',hours:5,
+ plain:'A server that receives observations from the worker, stores them, works out each spot\'s state, and pushes changes to every open page without them having to refresh.',
+ why:'It connects the camera side to the user side, and it is where most of the "software engineering" on your resume lives.',
+ how:['Define the endpoints from the contract in "Putting it together".','Store the structure (lots, bays, cameras, spots), an event log of every state change, a one-minute summary per bay, and raw readings for only about 24 hours.','Protect the observation endpoint with a secret key, so strangers cannot post fake data.','Add the live stream endpoint, then try it with <code>curl</code> before building any page.'],
+ options:[
+  {name:'Live updates with SSE (server-sent events)',pick:1,pro:'One-way push over normal HTTP. The browser reconnects automatically. Very little code.',con:'Only server to browser, which is all you need.'},
+  {name:'WebSockets',pro:'Two-way, and good for chat or games.',con:'More code and more failure modes for a feature you do not need.'},
+  {name:'The page asks every 5 seconds (polling)',pro:'Simplest of all, works everywhere.',con:'Wasteful, and the delay is at least the poll interval. A fine fallback.'},
+  {name:'FastAPI (Python) or Node',pick:1,pro:'FastAPI keeps you in one language with the CV worker. Node is fine if that is your day-job stack.',con:'Two languages means two toolchains.'},
+  {name:'Postgres: local in Docker, a free hosted tier for the demo',pick:1,pro:'Unlimited on your Mac. The event log and one-minute summaries are ready for SQL analysis later. Interviewers ask about it.',con:'Free hosted tiers (for example Neon or Supabase) have size limits and change over time, so check them. This is why raw readings are deleted after about a day.'},
+  {name:'SQLite',pro:'Zero setup.',con:'Harder to host for a public demo and to analyse from other tools.'}],
+ edge:['The same observation arrives twice, or an old one arrives late: ignore it based on timestamp.','The server restarts: rebuild state from the database, and the browser reconnects.','The observations table grows forever: delete rows older than a few days, or store only changes.','Many people watching at once: keep the current state in memory and send the same message to everyone.'],
+ done:'You post an observation with <code>curl</code> and see an open browser tab change.'},
+
+{id:'F6',name:'Web app: map and camera view',pri:'must',hours:6,
+ plain:'The page people open on their phone: the lot picture with coloured spots, one big "N free" number, and "updated 12 s ago".',
+ why:'If people cannot read it in two seconds while walking, nothing else matters.',
+ how:['Build the camera view first: the picture with each spot\'s shape on top, coloured by state. Then add a map of the campus where each bay is coloured by how full it is, and clicking a bay opens its camera view.','Show the big free count and a per-row summary ("Row C: 2 free").','Show the age of the data, and grey out anything stale.','Connect to the SSE stream and update just the spots that changed.'],
+ options:[
+  {name:'A map of bays (MapLibre), and inside a bay, shapes drawn on the camera image (SVG overlay)',pick:1,pro:'A real-map feel for the campus, and exact accuracy for the spots. Hidden spots can be shown striped to mean "estimated".',con:'You draw the bay outlines once, in a free tool such as geojson.io. Pick a map tile source whose terms allow your use, because OpenStreetMap\'s own servers are meant for light use.'},
+  {name:'Put every individual spot on the map',pro:'Looks very polished.',con:'Needs a geometric conversion from picture points to map coordinates (a homography) for each camera. A stretch goal.'},
+  {name:'React with TypeScript',pick:1,pro:'Your strongest skill, so this is where you move fastest, and it reads well on a resume.',con:'More setup than plain JavaScript.'}],
+ edge:['Colour-blind users: do not rely on colour. Add text or an icon ("free", "taken").','Stale data must look stale, never fresh.','Slow mobile network: show the last known state immediately, then update.','Lots with hundreds of spots: show a per-row summary first.','Dark mode and large text.'],
+ done:'You open it on your phone and watch a spot change colour when you replay the video.'},
+
+{id:'F7',name:'Crowd reports and targeted questions',pri:'should',hours:8,
+ plain:'People tap "I see a free spot in Row C" or "Row C is full". Old reports lose weight over time (Lab 3). They fill the gaps where the camera cannot see. The app can also ask: when a hidden spot is still uncertain, it asks someone in that bay a yes/no question.',
+ why:'This is your original idea and your most interesting engineering problem: combining several unreliable sources into one answer. It is also the part that turns the project from "I ran YOLO" into a system.',
+ how:['Add a reports endpoint and table.','Write the fusion function from Lab 3 as a pure function (inputs in, probability out) with unit tests.','Add two buttons to the page, and a question card: when the gate-count estimate (Lab 4) is still unsure about a hidden spot, ask people in that bay "Is the spot behind the pillar free?". Ask rarely, and only when the answer would change what is shown.','Write the simulator: invent a lot\'s true history, add noisy camera readings with blind zones, add random reports (some wrong), and measure the error with and without reports.','Tune the weights using the simulator, not by feel.'],
+ options:[
+  {name:'Reports per zone (row)',pick:1,pro:'Matches what a person can say while walking. Avoids needing exact spot ids.',con:'Less precise than per spot.'},
+  {name:'Reports per spot',pro:'Precise.',con:'Nobody will tap the right spot id. Skip.'},
+  {name:'Anonymous device id with a rate limit',pick:1,pro:'The page makes a random code the first time it opens and keeps it in the browser. The server uses it to cap reports (for example one per zone per minute). No sign-up and no personal data.',con:'Only a speed bump: clearing the browser gives a new code. Add a per-IP limit as a second layer. Fading and camera priority limit the damage.'},
+  {name:'Accounts and a reputation score',pro:'Better trust.',con:'Needs rewards to be worth it, which this app does not have. A quiet alternative for later: weigh each device by how often its past reports matched the camera.'}],
+ edge:['Trolls and honest mistakes: reports fade, and a fresh camera reading overrides them.','Reports that contradict each other.','The "herd effect": if 20 people see the same free spot, 19 will be disappointed. Show "2 free in Row C" and a likelihood instead of promising one exact spot.','Cold start: with no users the feature looks dead. This is why you have the simulator and the demo data.','Proving someone is really at the lot (geolocation) needs HTTPS and permission. Leave it for later.'],
+ done:'A chart from the simulator showing that the mixed estimate beats camera-only when the camera has blind spots.'},
+
+{id:'F8',name:'Availability prediction',pri:'could',hours:5,
+ plain:'"Will there be space at 9:45 on Tuesday?" Answered from past patterns instead of live data.',
+ why:'It still works when the camera is off, and it helps people decide before they leave home.',
+ how:['Group past occupancy by weekday and hour.','Show the average for each hour as a small chart on the page.','Optionally add the class timetable as an extra input.'],
+ options:[
+  {name:'Plain averages per weekday and hour',pick:1,pro:'Simple, honest, and needs no ML.',con:'Needs some history. PKLot images carry date and time in their file names, so check whether you can build a real daily pattern from them, or generate a pattern with the simulator.'},
+  {name:'A machine-learning model (e.g. gradient boosting)',pro:'Can use extra inputs such as weather or exams.',con:'Needs far more data than you will have.'}],
+ edge:['Little data: say "not enough data" instead of guessing.','Holidays and exam weeks.','A newly added lot.'],
+ done:'A "typical Tuesday" chart for one lot.'},
+
+{id:'F9',name:'Gate counting and hidden-spot estimate',pri:'should',hours:8,
+ plain:'Counters at the entrances of each aisle or bay note every car going in and out. "Cars in minus cars out" gives the number of cars inside, even where no camera can see. Compared with what the cameras see, it lets the app estimate how many hidden spots are taken (Lab 4).',
+ why:'It is accurate in total, and it covers exactly what the cameras cannot: spots behind pillars and trees. It also tells the app when to ask the crowd.',
+ how:['Pick a road or aisle entrance in your test footage and draw a virtual line across each lane.','Run the detector with an object tracker, which keeps an identity for each car from frame to frame, and count a car when its track crosses a line.','Send each crossing to the API as an in or out event for that line.','Keep a running total per bay with a known starting point (a baseline) and an error range that grows with time.','Compare the total with what the cameras see, and estimate the hidden spots (Lab 4).','Measure it: count a 10-minute video by hand and compare. Record how fast the count drifts.'],
+ options:[
+  {name:'Virtual lines with a tracker, one line per lane',pick:1,pro:'No hardware. Works for lots with several entrances, because you put lines at each aisle or bay entrance. Trackers are built into common detection libraries.',con:'Cars side by side or bumper to bumper can be merged into one. Counts drift, so you need resets.'},
+  {name:'Just add up the visible spots',pro:'Nothing to build.',con:'Says nothing about hidden spots. This is what you lose without gate counting.'},
+  {name:'A cheap infrared or ultrasonic sensor at the gate',pro:'Accurate at a single gate.',con:'It is hardware, and a lot with many entrances needs many sensors.'}],
+ edge:['Counting drift: reset when the cameras can see nearly everything, or at night when the lot is empty.','Two cars side by side: use one line per lane and a camera that looks down on the road.','Cars inside that are not in a spot (circling, double-parked): include an allowance in the sum.','No single gate: count at the entrance of each aisle or bay.','A reversing car crosses a line twice: record the direction, so the two crossings cancel out.'],
+ done:'Over a 10-minute test video, the count is within a few cars of your hand count, and you can say how fast it drifts.'},
+
+{id:'F10',name:'Ship it',pri:'must',hours:5,
+ plain:'Package everything so anyone can run it with one command, test it automatically on every change, put a live demo online, and write a README that sells the project.',
+ why:'Reviewers decide in about 90 seconds. A running link, a clear README and real numbers are what they look for.',
+ how:['Write a <code>docker-compose.yml</code> that starts the API, database and web page together.','Add a GitHub Actions workflow (CI, which means automatic checks on every push) that runs your unit tests.','Deploy the API and page to a free or cheap host. Check the current free-tier limits first.','README: what it is, a GIF or 60-second video, an architecture diagram, your accuracy table, known limits, and how to run it.'],
+ options:[
+  {name:'Worker on your laptop, API and page hosted, plus a replay mode',pick:1,pro:'Cheap, and the demo works even when your laptop is off.',con:'The live-camera part only runs when you start it.'},
+  {name:'Everything on one small rented server',pro:'Fully live.',con:'Costs money and needs maintenance.'},
+  {name:'Only a recorded video of the demo',pro:'Zero hosting.',con:'No clickable link. Weaker.'}],
+ edge:['Never commit secrets (API keys). Use environment variables and a <code>.env.example</code> file.','Do not commit large model or dataset files. Document how to download them.','Credit the datasets and respect their licences.','Add a short privacy note: no frames stored, no plates, no faces.'],
+ done:'A stranger can clone the repo, run <code>docker compose up</code>, and see the demo.'},
+
+{id:'F11',name:'Bays, cameras and the pretend campus',pri:'must',hours:5,
+ plain:'One camera cannot see a big lot, so the system is built from bays. Each bay has one or more cameras, and each camera watches some spots. The server combines everything into bay totals and a lot total. To test this without real cameras, you build a pretend campus from public datasets and a replay service that streams their images as if they were live cameras.',
+ why:'It is the structure of the whole product. It is much easier to build it in from the start than to add it to a one-camera system later.',
+ how:['Define the data model: Lot, Bay, Camera, Spot (and counting lines later).','Give every spot a main camera, and optionally a backup camera.','Write the replay service. It reads a folder of timestamped images and posts observations exactly like a live camera would, optionally sped up so a day takes minutes. Keep the image source swappable: dataset replay, video file, or a live stream.','Build three or more bays from different dataset lots or cameras, and place them on the map.','Roll spot states up into bay totals and a lot total.'],
+ options:[
+  {name:'One main camera per spot, optional backup',pick:1,pro:'Simple to reason about, and no double counting.',con:'You must choose the main camera for spots that two cameras can see.'},
+  {name:'Combine every camera that sees a spot',pro:'Uses all the evidence.',con:'Two cameras looking at the same car are not two independent witnesses, so you would double count.'},
+  {name:'One camera per bay only',pro:'Easiest.',con:'Does not match real bays, which are often too big or have hidden corners.'}],
+ edge:['Two cameras see the same spot: use the main camera, with the other as backup only.','One camera goes down: mark its spots unknown and show "12 of 30 spots unknown" instead of guessing.','Cameras have different angles and light: keep thresholds and test results per camera.','Cameras have different clocks: use the server time when the message arrives, and store the camera time too.'],
+ done:'Three or more bays from different dataset cameras show live-looking numbers on one page, and stopping one bay\'s feed turns its spots grey, not wrong.'},
+
+{id:'F12',name:'Per-spot classifier (capped ML stretch)',pri:'could',hours:8,
+ plain:'Train a small image classifier that looks at a cropped picture of one spot and says taken or free, then test it on a lot it never saw during training.',
+ why:'It shows the system works on new places, and gives you a second detector to compare with the pretrained one. The time cap keeps it from swallowing the project.',
+ how:['Cut the labelled datasets into per-spot crops.','Fine-tune a small pretrained model (for example MobileNet or ResNet-18) with PyTorch. On a Mac it can use the GPU through the MPS backend.','Train on one lot and test on a different lot, then swap them.','Add the results to the same evaluation table as the pretrained detector.','Stop at 8 hours, whatever the result. Write down what you learned.'],
+ options:[
+  {name:'Fine-tune a small pretrained classifier',pick:1,pro:'Cheap to train, handles partly hidden spots well, and supports the "train on one lot, test on another" experiment.',con:'It may do worse on a camera angle it has not seen. A hard time cap is essential.'},
+  {name:'Skip it and use only the pretrained detector',pro:'Saves 8 hours. Perfectly fine for an SDE-1 portfolio.',con:'No train-and-test story.'},
+  {name:'Train a model from scratch',pro:'Maximum learning.',con:'Slow and unnecessary. Not recommended.'}],
+ edge:['Overfitting to one camera\'s angle and lighting.','Label noise: half-hidden cars are labelled inconsistently.','Class imbalance: most spots are taken at busy hours, so balance the training data.'],
+ done:'One row per model per lot in the evaluation table, for example "trained on lot A, tested on lot B", next to the pretrained detector.'}
+];
+
+function featHTML(f){
+ return `<details class="feat" data-pri="${f.pri}" id="feat-${f.id}">
+ <summary><span class="fid">${f.id}</span><span class="fname">${f.name}</span><span class="badge ${f.pri}">${PRI[f.pri]}</span><span class="hrs">${f.hours} h</span></summary>
+ <div class="featbody">
+  <p class="lead">${f.plain}</p>
+  <h4>Why it exists</h4><p>${f.why}</p>
+  <h4>How to build it</h4><ol>${f.how.map(x=>`<li>${x}</li>`).join('')}</ol>
+  <h4>Options and trade-offs</h4>
+  <div class="opts">${f.options.map(o=>`<div class="opt ${o.pick?'pick':''}">${o.pick?'<span class="tag">Suggested</span><br>':''}<b>${o.name}</b><p><span class="pro">Good:</span> ${o.pro}</p><p><span class="con">Costs:</span> ${o.con}</p></div>`).join('')}</div>
+  <h4>Edge cases</h4><ul>${f.edge.map(x=>`<li>${x}</li>`).join('')}</ul>
+  <h4>Done when</h4><div class="done"><p>${f.done}</p></div>
+ </div></details>`;
+}
+$('#feat-list').innerHTML=FEATS.map(featHTML).join('');
+$('#feat-filter').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.id==='feat-toggle'){const ds=$$('#feat-list details:not([hidden])');const anyClosed=ds.some(d=>!d.open);ds.forEach(d=>d.open=anyClosed);b.textContent=anyClosed?'Collapse all':'Expand all';return}
+  $$('#feat-filter [data-f]').forEach(x=>x.classList.toggle('on',x===b));
+  $$('#feat-list details').forEach(d=>d.hidden=!(b.dataset.f==='all'||d.dataset.pri===b.dataset.f));
+});
+
+/* hero stats from data */
+const mustHours=FEATS.filter(f=>f.pri==='must').reduce((a,f)=>a+f.hours,0);
+$('#st-hours').textContent=mustHours+' h';
+$('#st-weeks').textContent=Math.ceil(mustHours*1.3/6)+' wks';
+
+/* ---------- lab 1: overlap ---------- */
+function labOverlap(){
+  const dx=+$('#ov-x').value, dy=+$('#ov-y').value, th=+$('#ov-t').value;
+  const S={x:190,y:60,w:140,h:100}, C={x:200+dx,y:70+dy,w:120,h:80};
+  $('#ov-car').setAttribute('x',C.x);$('#ov-car').setAttribute('y',C.y);
+  $('#ov-cartxt').setAttribute('x',C.x+C.w/2);$('#ov-cartxt').setAttribute('y',C.y+C.h/2+5);
+  const ix=Math.max(0,Math.min(S.x+S.w,C.x+C.w)-Math.max(S.x,C.x)), iy=Math.max(0,Math.min(S.y+S.h,C.y+C.h)-Math.max(S.y,C.y));
+  const cov=ix*iy/(S.w*S.h)*100;
+  $('#ov-xo').textContent=dx; $('#ov-yo').textContent=dy; $('#ov-to').textContent=th+'%';
+  $('#ov-pct').textContent=Math.round(cov)+'%';
+  const taken=cov>=th, v=$('#ov-verdict');
+  v.textContent=taken?'taken':'free'; v.style.color=taken?'var(--bad)':'var(--good)';
+}
+['ov-x','ov-y','ov-t'].forEach(id=>$('#'+id).addEventListener('input',labOverlap)); labOverlap();
+
+/* ---------- lab 2: smoothing ---------- */
+const TRUTH=Array.from({length:36},(_,i)=>i>=12?1:0);
+const RAW=TRUTH.slice(); [5,6].forEach(i=>RAW[i]=1); [20,24,25].forEach(i=>RAW[i]=0);
+function smoothSeq(m){let s=0,run=0;return RAW.map(r=>{if(r!==s){run++;if(run>=m){s=r;run=0}}else run=0;return s})}
+function strip(arr,cmp){return arr.map((v,i)=>`<span class="c ${v?'t':''} ${cmp&&cmp[i]!==v?'w':''}" title="frame ${i+1}: ${v?'taken':'free'}"></span>`).join('')}
+function labSmooth(){
+  const m=+$('#sm-m').value, out=smoothSeq(m);
+  $('#sm-mo').textContent=m;
+  $('#sm-truth').innerHTML=strip(TRUTH); $('#sm-raw').innerHTML=strip(RAW,TRUTH); $('#sm-out').innerHTML=strip(out,TRUTH);
+  const wrong=out.filter((v,i)=>v!==TRUTH[i]).length;
+  let first=out.findIndex((v,i)=>i>=12&&v===1); const delay=first<0?null:(first-12)*5;
+  const w=$('#sm-wrong'); w.textContent=wrong+' wrong frame'+(wrong===1?'':'s')+' of 36'; w.className='pill '+(wrong<=2?'good':'bad');
+  $('#sm-delay').textContent='delay to show "taken": '+(delay===null?'never':delay+' s');
+}
+$('#sm-m').addEventListener('input',labSmooth); labSmooth();
+
+/* ---------- lab 3: fusion ---------- */
+function labFuse(){
+  const cam=$('#fx-cam').value, ca=+$('#fx-camage').value, rep=$('#fx-rep').value, ra=+$('#fx-repage').value;
+  $('#fx-camageo').textContent=ca+' min'; $('#fx-repageo').textContent=ra+' min';
+  const wc=cam==='off'?0:4*Math.exp(-ca/3), wr=rep==='none'?0:1.5*Math.exp(-ra/8);
+  const sc=cam==='free'?wc:cam==='taken'?-wc:0, sr=rep==='free'?wr:rep==='taken'?-wr:0;
+  const total=sc+sr, p=1/(1+Math.exp(-total));
+  const row=(name,val,max)=>{const pct=Math.min(100,Math.abs(val)/max*100);return `<div class="bar"><span>${name}</span><div class="track"><div class="fill ${val>0?'pos':val<0?'neg':''}" style="width:${pct}%"></div></div><span class="v">${val>0?'+':''}${val.toFixed(2)}</span></div>`};
+  $('#fx-bars').innerHTML=row('Camera vote',sc,4)+row('Report vote',sr,4)+row('Total (free is +)',total,4);
+  const v=$('#fx-verdict'); let txt,col;
+  if(p>=0.7){txt='likely free';col='var(--good)'}else if(p<=0.3){txt='likely taken';col='var(--bad)'}else{txt='unsure';col='var(--warn)'}
+  v.textContent=txt; v.style.color=col;
+  $('#fx-p').textContent='P(free) = '+Math.round(p*100)+'%';
+  $('#fx-why').textContent='Camera weight now '+wc.toFixed(2)+' (starts at 4, fades with τ = 3 min). Report weight now '+wr.toFixed(2)+' (starts at 1.5, fades with τ = 8 min). Free above 70%, taken below 30%, unsure in between.';
+}
+['fx-cam','fx-camage','fx-rep','fx-repage'].forEach(id=>$('#'+id).addEventListener('input',labFuse)); labFuse();
+
+/* ---------- lab 4: hidden spots ---------- */
+function labHidden(){
+  const v=id=>+$('#'+id).value, hid=v('l4-hidden'), ins=v('l4-inside'), seen=v('l4-seen'), circ=v('l4-circ'), dr=v('l4-drift');
+  ['hidden','inside','seen','circ','drift'].forEach(k=>{$('#l4-'+k+'o').textContent=v('l4-'+k)});
+  const un=ins-seen-circ, cl=x=>Math.max(0,Math.min(hid,x));
+  const tMid=cl(un), tLo=cl(un-dr), tHi=cl(un+dr);
+  const fMid=hid-tMid, fLo=hid-tHi, fHi=hid-tLo;
+  $('#l4-un').textContent='Cars unaccounted for: '+un;
+  $('#l4-taken').textContent='Taken among hidden: ~'+tMid+' ('+tLo+' to '+tHi+')';
+  $('#l4-free').textContent='Free among hidden: ~'+fMid+' ('+fLo+' to '+fHi+')';
+  let txt,col;
+  if(hid===0){txt='No hidden spots to estimate.';col='var(--mute)'}
+  else if(fHi===0){txt='Hidden spots are almost certainly all taken.';col='var(--bad)'}
+  else if(fLo>0){txt='At least '+fLo+' hidden spot'+(fLo===1?' is':'s are')+' free.';col='var(--good)'}
+  else{txt='Not sure. This is where the app should ask the crowd.';col='var(--warn)'}
+  const e=$('#l4-verdict'); e.textContent=txt; e.style.color=col;
+}
+['l4-hidden','l4-inside','l4-seen','l4-circ','l4-drift'].forEach(id=>$('#'+id).addEventListener('input',labHidden)); labHidden();
+
+/* ---------- edge cases ---------- */
+const EDGE=[
+ ['Camera and weather','Night or low light','The model misses dark cars and says "free" for spots that are taken.','Lower the confidence in the dark and show "unknown" instead of "free". Test at night and report the result. Infrared cameras are a later upgrade.'],
+ ['Camera and weather','Heavy rain, glare or fog','Water blur and reflections hide or fake cars.','Report accuracy per weather type. Use a confidence cut-off. Let reports and patterns help when the camera is unsure.'],
+ ['Camera and weather','Shadows and reflections','A dark shadow or a puddle looks like a car for a moment.','Smoothing (M readings in a row) ignores short-lived mistakes. A minimum box size also helps.'],
+ ['Camera and weather','The camera is moved or shaken','The spot shapes no longer line up with the real spots, so every answer is wrong while looking confident.','Keep a reference picture and compare it every few minutes. If it no longer matches, mark the whole lot "unknown" and flag it for re-calibration.'],
+ ['Camera and weather','The camera goes offline or freezes','The app keeps showing the last answer as if it were fresh.','Every spot carries a "last confirmed" time. After 2 minutes without evidence, show "unknown" in grey. Also reject identical consecutive frames.'],
+ ['Vehicles','A large vehicle covers two spots','Both spots look taken, or the wrong one is taken.','Give the vehicle to the spot with the greater overlap. Mark the neighbour "blocked" so people are not misled.'],
+ ['Vehicles','A car parked crooked or across a line','The overlap is split between two spots.','Same rule: the larger overlap wins. A threshold around 40 to 50% is a good starting range (Lab 1).'],
+ ['Vehicles','Scooters and motorcycles','Indian lots are full of two-wheelers, which are small and may sit anywhere.','Give spots a type (car or bike). Test motorcycle detection on your footage. List this as a known limit if it is weak.'],
+ ['Vehicles','A car drives through or waits briefly','It is counted as parked for a moment.','Hysteresis. About 30 to 60 seconds of stability before the state flips.'],
+ ['Vehicles','A pillar, tree or other car hides a spot','The model cannot see inside, and may say "free".','Store how visible each spot is. Below a limit, answer "unknown" instead of guessing.'],
+ ['People','A person or bicycle stands in a spot','It is wrongly counted as a car, or it hides a car.','Count only vehicle classes. Ignore small boxes.'],
+ ['People','Wrong or malicious reports','A troll marks a full row as free.','Reports fade fast, and the camera wins when fresh. Rate-limit each device. Leave accounts for later.'],
+ ['People','Reports that contradict the camera','Two sources disagree.','The mixing formula (Lab 3) handles it. Fresh and strong evidence outweighs old and weak evidence.'],
+ ['People','The herd effect','One free spot is shown to 20 people, who all drive to it.','Show counts per row and a likelihood, not a promise about one exact spot.'],
+ ['System','Duplicate or late messages','An old observation arrives after a newer one and rewinds the state.','Use timestamps and ignore anything older than what you have. Make repeated posts harmless.'],
+ ['System','The server restarts','Live pages go blank and state is lost.','Keep state in the database. The browser reconnects to SSE automatically.'],
+ ['System','Closed areas and events','Spots that nobody may use look "free".','Add a "disabled" flag per spot, so closed or reserved spots are never offered.'],
+ ['System','Privacy','Video of people and number plates is sensitive data.','Process frames in memory and discard them. Send only spot states. Say so in the README.'],
+ ['System','Time zones and clock differences','The worker and server disagree about "now", so ages look wrong.','Store everything in UTC and show Indian time in the page. Use the server\'s clock for ages.'],
+ ['Counting','Counting drift','Missed or doubled crossings pile up, so the "cars inside" number slowly becomes wrong.','Treat the count as soft evidence with an error range. Reset it when the cameras can see nearly everything, or when the lot is empty at night. Warn if the count and the cameras disagree for a long time.'],
+ ['Counting','Cars side by side or bumper to bumper at a line','The tracker merges two cars into one, or swaps their identities.','Use one line per lane and a camera that looks down on the road. Log how often the count is corrected, and list it as a known limit.'],
+ ['Counting','Cars that are inside but not in a spot','Cars circling, double-parked or waiting count as "inside" but fill no spot.','Include an allowance for them in the sum (Lab 4), and learn typical values for each time of day.'],
+ ['Counting','A bay with no single gate','There is no one place to count every car that enters.','Put virtual lines at the entrance of each aisle or bay. A bay\'s count is its in-lines minus its out-lines. Where that is impossible, use cameras plus the crowd.'],
+ ['Multi-camera','Two cameras see the same spot','Adding both readings double counts the same evidence.','Give each spot a main camera, with the other one as backup only.'],
+ ['Multi-camera','One camera in a bay goes down','Its spots turn wrong, or the bay total looks too low.','Mark those spots unknown and show "12 of 30 spots unknown" instead of guessing.'],
+ ['Multi-camera','Cameras with different angles and light','One overlap threshold does not suit every camera.','Keep thresholds and test results per camera.'],
+ ['People','Asking too many questions','People get annoyed and start ignoring the app.','Ask only when the answer would change what is shown, only people in that bay, and at most a few times per visit.']
+];
+const cats=['All',...new Set(EDGE.map(e=>e[0]))];
+$('#edge-filter').innerHTML=cats.map((c,i)=>`<button class="btn ${i?'':'on'}" data-c="${c}">${c}</button>`).join('');
+function drawEdge(c){
+  $('#edge-list').innerHTML=EDGE.filter(e=>c==='All'||e[0]===c).map(e=>`<div class="card"><span class="pill">${e[0]}</span><h3 style="margin-top:8px">${e[1]}</h3><div class="cols"><div><span class="lbl">What goes wrong</span><p>${e[2]}</p></div><div><span class="lbl">What we do</span><p>${e[3]}</p></div></div></div>`).join('');
+}
+$('#edge-filter').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('#edge-filter button').forEach(x=>x.classList.toggle('on',x===b));drawEdge(b.dataset.c)});
+drawEdge('All');
+
+/* ---------- metrics ---------- */
+function metrics(){
+  const g=id=>Math.max(0,+$('#'+id).value||0), tp=g('m-tp'),fp=g('m-fp'),fn=g('m-fn'),tn=g('m-tn'), tot=tp+fp+fn+tn;
+  const pct=(a,b)=>b?Math.round(a/b*100)+'%':'n/a';
+  $('#m-acc').textContent='Accuracy '+pct(tp+tn,tot); $('#m-prec').textContent='Precision '+pct(tp,tp+fp); $('#m-rec').textContent='Recall '+pct(tp,tp+fn);
+}
+['m-tp','m-fp','m-fn','m-tn'].forEach(id=>$('#'+id).addEventListener('input',metrics));
+$('#m-lazy').onclick=()=>{$('#m-tp').value=0;$('#m-fp').value=0;$('#m-fn').value=20;$('#m-tn').value=80;metrics()}; metrics();
+
+/* ---------- architecture ---------- */
+const NODES=[
+ {n:'Camera source',s:'video file now, phone or CCTV later',i:'Nothing. It is the start.',o:'A picture every few seconds.',f:'Freezes, goes dark, gets moved.',t:'Replay a recorded video in place of the camera.'},
+ {n:'Detector worker',s:'Python, one per camera, runs near it',i:'A picture, plus the spot shapes from F1.',o:'A list of spots with an occupied probability.',f:'The model is slow on a weak computer. It misses cars at night.',t:'The PKLot evaluation (F3), plus the golden-image set.'},
+ {n:'Gate counter',s:'tracks cars across virtual lines',i:'Video from a camera that looks at a road or aisle entrance.',o:'"A car went in" and "a car went out" events, each with its line id.',f:'Cars side by side get merged. Counts drift over time.',t:'Traffic footage with a hand-counted total (F9).'},
+ {n:'Ingest endpoint',s:'POST /observations and /counts',i:'The worker\'s JSON message and its secret key.',o:'A stored observation.',f:'Duplicates, late messages, fake posts, malformed JSON.',t:'Unit tests that send bad payloads and expect clean errors.'},
+ {n:'State engine',s:'the one place that decides',i:'Observations, gate counts and reports.',o:'For each spot: free, taken or unknown, with a confidence. For each bay: totals, and an estimate for hidden spots.',f:'A maths bug turns the whole lot the wrong colour. Stale data shown as fresh.',t:'Unit tests, plus the fusion simulator (F7).'},
+ {n:'Database',s:'Postgres',i:'Structure, an event log of state changes, one-minute bay summaries, and recent raw readings.',o:'The saved state after a restart, and data for analysis later.',f:'Raw readings pile up. Delete them after about a day.',t:'Restart the server and check the state is intact.'},
+ {n:'Live feed',s:'SSE stream',i:'A state change.',o:'The same small message sent to every open page.',f:'Dropped connections, proxies that hold data back.',t:'A script that opens 200 connections and measures the delay.'},
+ {n:'Web app',s:'React, TypeScript and a map',i:'The live stream, plus taps on "report".',o:'The coloured lot, and report messages to the API.',f:'Stale display, hard to read outdoors.',t:'Check by hand on a phone. Optionally one automated browser test.'}
+];
+$('#flow').innerHTML=NODES.map((x,i)=>`<button class="node ${i===1?'on':''}" data-i="${i}"><b>${x.n}</b><span>${x.s}</span></button>`).join('');
+function drawNode(i){const x=NODES[i];$('#nodepanel').innerHTML=`<h3>${x.n}</h3><dl><dt>Goes in</dt><dd>${x.i}</dd><dt>Comes out</dt><dd>${x.o}</dd><dt>Breaks by</dt><dd>${x.f}</dd><dt>Test it with</dt><dd>${x.t}</dd></dl>`}
+$('#flow').addEventListener('click',e=>{const b=e.target.closest('.node');if(!b)return;$$('#flow .node').forEach(n=>n.classList.toggle('on',n===b));drawNode(+b.dataset.i)});
+drawNode(1);
+
+/* ---------- directions ---------- */
+const DIRS=[
+ {k:'A',n:'System first',tag:'Suggested',pitch:'Use an off-the-shelf detector and spend your hours on a well-built, measured, deployed system.',build:'F1 to F6, F10 and F11 first (several bays on a map, replayed from datasets). Then gate counting (F9), then crowd reports and questions (F7) with the simulator.',hours:'About 37 h for the core, about 53 h with gate counting and crowd reports.',story:'"I built a real-time parking availability system: multi-camera detection fused with gate counts and decaying crowd reports, evaluated on a public dataset, served with FastAPI and live updates, containerised and tested in CI."',interview:'Real-time design, data quality, testing, deployment and trade-offs. This is what SDE-1 interviews usually probe.',risk:'It can look like "just a YOLO wrapper". Fix this with your evaluation table and the fusion simulation, which show engineering judgement.',pick:'You want the strongest signal for a software engineering role with limited time.'},
+ {k:'B',n:'ML first',tag:'',pitch:'Train your own per-spot classifier and compare it with the off-the-shelf detector.',build:'F1 to F3 in depth: fine-tune a small image classifier on PKLot, test it on a different lot, compare approaches, then a thin API and page.',hours:'About 35 to 40 h, plus training time on a free GPU notebook.',story:'"I compared a detection-based and a classifier-based approach to parking occupancy, and measured how each generalises to an unseen lot."',interview:'Model choice, overfitting, generalisation, evaluation. Strong for ML roles.',risk:'Less aligned with typical SDE-1 loops. Training and tuning can eat your evenings with no end.',pick:'You want to move toward ML engineering and have the time.'},
+ {k:'C',n:'Product first',tag:'',pitch:'Build for real users: a phone-friendly app with reports, and a small pilot at VIT.',build:'F5, F6, F7 and F8 first, with the camera part kept light (even manual data at the start).',hours:'About 30 h, plus the effort of finding users and permission.',story:'"I shipped an app used by N students on campus."',interview:'User feedback, adoption, product decisions. Impressive if it works.',risk:'It needs users and permission, and both are outside your control. Without critical mass the data stays empty.',pick:'You enjoy the people side more than the technical side, and can get a few friends to test it.'}
+];
+let curDir=store.get('dir','A');
+function drawDirs(){
+  $('#dir-tabs').innerHTML=DIRS.map(d=>`<button class="btn ${d.k===curDir?'on':''}" data-k="${d.k}">${d.k} · ${d.n}${d.tag?' ('+d.tag.toLowerCase()+')':''}</button>`).join('');
+  const d=DIRS.find(x=>x.k===curDir);
+  $('#dir-panel').innerHTML=`<h3>${d.k} · ${d.n}</h3><p>${d.pitch}</p><dl><dt>You build</dt><dd>${d.build}</dd><dt>Time</dt><dd>${d.hours}</dd><dt>Resume line</dt><dd><i>${d.story}</i></dd><dt>Interview value</dt><dd>${d.interview}</dd><dt>Main risk</dt><dd>${d.risk}</dd><dt>Pick it if</dt><dd>${d.pick}</dd></dl>`;
+}
+$('#dir-tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;curDir=b.dataset.k;store.set('dir',curDir);drawDirs()});
+drawDirs();
+
+/* ---------- schedule ---------- */
+const scSel=store.get('sc',FEATS.filter(f=>f.pri==='must').map(f=>f.id));
+$('#sc-list').innerHTML=FEATS.map(f=>`<label><input type="checkbox" data-id="${f.id}" ${scSel.includes(f.id)?'checked':''}><span>${f.id} · ${f.name} <span class="badge ${f.pri}">${PRI[f.pri]}</span></span><span class="hrs">${f.hours} h</span></label>`).join('');
+$('#sc-hpw').value=store.get('hpw',6);
+function sched(){
+  const ids=$$('#sc-list input:checked').map(x=>x.dataset.id); store.set('sc',ids);
+  const hpw=+$('#sc-hpw').value; store.set('hpw',hpw); $('#sc-hpwo').textContent=hpw+' h';
+  const base=FEATS.filter(f=>ids.includes(f.id)).reduce((a,f)=>a+f.hours,0), hrs=Math.round(base*($('#sc-buf').checked?1.3:1));
+  const weeks=hrs?Math.ceil(hrs/hpw):0, d=new Date(); d.setDate(d.getDate()+weeks*7);
+  $('#sc-h').textContent=hrs; $('#sc-w').textContent=weeks;
+  $('#sc-d').textContent=weeks?d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'-';
+  $('#sc-note').textContent=hpw<=4?'At this pace, expect the project to stall whenever work or interviews get busy. That is fine. Keep the README status section up to date.':'If an interview loop starts, pause the project. It will still be there.';
+}
+$('#sc-list').addEventListener('change',sched); $('#sc-hpw').addEventListener('input',sched); $('#sc-buf').addEventListener('change',sched); sched();
+
+const PHASES=[
+ {t:'Phase 1 · Prove that it can see',h:'F1, F2, F3 · about 13 h',items:['Download a small PKLot sample and note its licence','Click-to-draw screen or label converter makes the spot JSON','Detector prints and draws the state of each spot on one image','Evaluation script produces the first accuracy table, per lot and per weather']},
+ {t:'Phase 2 · Make it live (one bay)',h:'F4, F5, F6 · about 14 h',items:['Hysteresis rule with unit tests','FastAPI server with observation endpoint, Postgres in Docker (event log, one-minute summaries), and the SSE stream','Worker replays images and posts observations','React page: camera view with coloured spots first, then the bay on a map']},
+ {t:'Phase 3 · Several bays, then ship',h:'F11, F10 · about 10 h',stop:'Stop point. If you finish here you have a complete, resume-ready project. If time is short, ship with one or two bays and add more later. Everything after this is a bonus.',items:['Bay, camera and spot data model, plus the replay service for three or more bays','Bay totals on the map, and a dead camera shown as unknown','docker compose up starts everything, and CI runs the tests on each push','Deployed link, a 60-second demo video, and a README with an architecture diagram, results table and known limits']},
+ {t:'Phase 4 · Count the cars',h:'F9 · about 8 h',items:['Virtual lines and a tracker on traffic footage, tested against a hand count','Counts endpoint and "cars inside" per bay, with a baseline and an error range','Drift measured and written up','Hidden-spot estimate from Lab 4 shown on the map as striped spots']},
+ {t:'Phase 5 · Ask the crowd',h:'F7 · about 8 h',items:['Reports endpoint with an anonymous device id and a rate limit','Fusion function with unit tests','Question cards for uncertain hidden spots','Simulator and a chart comparing camera-only with the full mix']},
+ {t:'Phase 6 · Extras (only if you still enjoy it)',h:'F12, F8, probability state, a real pilot',items:['Probability-based slot state compared with hysteresis on the same replay (about 3 h)','Capped classifier experiment: train on one lot, test on another (F12)','Typical-day chart per bay (F8)','Ask the transport office about a single-camera pilot']}
+];
+const doneSet=new Set(store.get('ph',[]));
+function drawPhases(){
+  let total=0,done=0;
+  $('#phases').innerHTML=PHASES.map((p,pi)=>`<div class="phase card"><h3>${p.t}</h3><p class="muted small">${p.h}</p>${p.items.map((it,ii)=>{const id=pi+'-'+ii;total++;if(doneSet.has(id))done++;return `<label><input type="checkbox" data-id="${id}" ${doneSet.has(id)?'checked':''}><span>${it}</span></label>`}).join('')}${p.stop?`<div class="stopmark"><p><b>${p.stop}</b></p></div>`:''}</div>`).join('');
+  $('#ph-bar').style.width=(total?done/total*100:0)+'%'; $('#ph-count').textContent=done+' of '+total+' tasks done.';
+}
+$('#phases').addEventListener('change',e=>{const c=e.target.closest('input');if(!c)return;c.checked?doneSet.add(c.dataset.id):doneSet.delete(c.dataset.id);store.set('ph',[...doneSet]);drawPhases()});
+drawPhases();
+
+/* ---------- week 1 ---------- */
+const WK=[
+ {t:'Session 1 · Set up and look at the data',m:'60 min',goal:'A repo that runs, and real images on disk.',
+  steps:['Create the project folder as a git repo, with empty folders data, worker, eval and tests, and a README that has a "Status" line at the top','Create a Python virtual environment and a requirements file','Read the download pages of PKLot and CNRPark+EXT. Write the licence, size and file layout of each into the README','Download a small part of PKLot: about 50 images from each of its lots, mixing sunny, cloudy and rainy days. Do not download everything. Put the data folder in .gitignore','Open 5 images and their label files and write down what the labels look like'],
+  done:'Images and label files are on disk, the README lists the sources and licences, and you have made your first commit.',
+  stuck:'If a download is slow or awkward, start with whichever lot you can get. One lot is enough for week 1.'},
+ {t:'Session 2 · Spot shapes you can trust',m:'90 min',goal:'Dataset labels turned into your own spot format, and checked by eye.',
+  steps:['Write a converter that reads one label file and returns a list of spots: id, corner points, and whether the label says occupied','Write a preview script that draws each spot on its image, green for free and red for taken, with the id written on it','Look at 5 images from different lots and weather. Check that every outline sits on a real spot','Save the spots in your own JSON format from the plan, one file per camera','Write one unit test for the converter, using a single known label file'],
+  done:'A preview image where every outline sits on its spot and the colours match what you can see.',
+  stuck:'If the label format is confusing, handle one lot first. If outlines are shifted by a fixed amount, the labels may be for a different image size, so check the scaling.'},
+ {t:'Session 3 · The detector',m:'105 min',goal:'A script that colours every spot on one image from what a pretrained model sees.',
+  steps:['Install the libraries (see the starter commands below). Load the smallest pretrained detection model the documentation recommends and run it on one image. Try the Mac GPU ("mps") and fall back to the CPU if it errors','Keep only the vehicle classes (car, motorcycle, bus, truck) and draw their boxes on the image','Write worker/geometry.py: how much of a spot a box covers (Lab 1), using shapely. Add 3 unit tests: no overlap, full overlap, half overlap','Write worker/detect.py: given an image and a spot file, return taken or free for each spot (taken when coverage is at least 0.5), plus the coverage number','Draw a debug image with each spot coloured by the prediction, and mark spots where the prediction differs from the label'],
+  done:'A debug image for one picture is saved, and the unit tests pass.',
+  stuck:'If the GPU gives errors, use the CPU. One image is quick enough. If cars are missed, try a larger model or a larger image size before changing anything else.'},
+ {t:'Session 4 · The first number',m:'105 min',goal:'A table that says how well it works.',
+  steps:['Write eval/run.py: loop over 100 to 300 images, run the detector, and compare with the labels','Count correct and wrong answers for "free", in total and for each lot and weather type. Compute accuracy, precision and recall (see the calculator in Testing)','Try thresholds 0.3, 0.4, 0.5 and 0.6, and note the best. Spend at most 20 minutes on this','Save eval/report.md with the table and the 5 worst failure images. Write 3 sentences in the README about what you saw, for example rainy days or far-away spots','Commit, update the README status, and write the plan for week 2 in two lines'],
+  done:'Running python eval/run.py prints a table and saves it to eval/report.md.',
+  stuck:'If accuracy is poor, do not tune for days. Look at the failure images: crowded rows, tiny far-away cars, rain? Try a larger image size once, then record it as a finding. That is a valid and useful result.'}
+];
+const wkDone=new Set(store.get('wk1',[]));
+function drawWk(){
+  let total=0,done=0;
+  $('#wk-list').innerHTML=WK.map((s,si)=>`<div class="phase card"><h3>${s.t}</h3><p class="small"><span class="pill acc">${s.m}</span> <span class="muted">${s.goal}</span></p>${s.steps.map((it,ii)=>{const id=si+'-'+ii;total++;if(wkDone.has(id))done++;return `<label><input type="checkbox" data-id="${id}" ${wkDone.has(id)?'checked':''}><span>${it}</span></label>`}).join('')}<div class="done" style="margin-top:10px"><p><b>Done when:</b> ${s.done}</p></div><p class="small muted" style="margin-top:8px"><b>If stuck:</b> ${s.stuck}</p></div>`).join('');
+  $('#wk-bar').style.width=(total?done/total*100:0)+'%'; $('#wk-count').textContent=done+' of '+total+' steps done.';
+}
+$('#wk-list').addEventListener('change',e=>{const c=e.target.closest('input');if(!c)return;c.checked?wkDone.add(c.dataset.id):wkDone.delete(c.dataset.id);store.set('wk1',[...wkDone]);drawWk()});
+drawWk();
+
+/* ---------- decisions ---------- */
+const Q=[
+ {id:'dir',t:'Which direction?',o:[['A','A · System first','Best signal for an SDE-1 role per hour of effort.',1],['B','B · ML first','Pick if you want ML roles.'],['C','C · Product first','Pick if you can recruit real users.']]},
+ {id:'cams',t:'How are cameras organised?',o:[['many','Several bays with their own cameras from the start, using a pretend campus built from datasets','Matches a real campus and avoids redoing the data model.',1],['one','One camera first, more bays later','Faster start, but you may have to redo the data model.']]},
+ {id:'state',t:'How is a spot\'s state decided?',o:[['hyst','Hysteresis first, probability later, compared on the same replay','Easy to debug first, and the comparison is a good README result.',1],['prob','Probability from the start','More real-time, but harder to debug.']]},
+ {id:'gate',t:'Gate counting?',o:[['yes','Yes, after the core ships: virtual lines per aisle or bay, with a tracker','Also lets you estimate hidden spots.',1],['sum','No, just add up the spots','Nothing to build, but hidden spots stay unknown.'],['hw','A hardware sensor at the gate','Reliable at one gate, but you wanted to avoid hardware.']]},
+ {id:'det',t:'How will the detector work?',o:[['yolo','Find cars with a pretrained model (YOLO), then check overlap','No training. Tested on several lots, so each lot is already a test on a new place.',1],['cls','Also fine-tune a small classifier, capped at about 8 hours (F12)','Lets you run "train on one lot, test on another".']]},
+ {id:'be',t:'Backend language?',o:[['fastapi','Python with FastAPI','One language with the worker.',1],['node','Node.js','Pick it if it is your day-job stack and you want to move fast.']]},
+ {id:'db',t:'Database?',o:[['pg','Postgres: local Docker for development, a free hosted tier for the demo','Keeps history for analysis later. Check the current free-tier limits.',1],['sqlite','SQLite','Zero setup, but harder to host and analyse.']]},
+ {id:'fe',t:'Front end?',o:[['react','React and TypeScript with a MapLibre map','Your strongest skill.',1],['plain','Plain HTML and JavaScript','Fastest to start, less impressive.']]},
+ {id:'live',t:'Live updates?',o:[['sse','SSE','Simple and enough.',1],['ws','WebSockets','More than you need.'],['poll','Polling every 5 seconds','The easiest fallback.']]},
+ {id:'run',t:'Where does the detector run for the demo?',o:[['laptop','On your laptop, with a hosted API and a replay mode','Cheap, and the link always works.',1],['vm','On a small rented server','Fully live, costs money.'],['video','Only a recorded demo','Weakest.']]},
+ {id:'rep',t:'Crowd reports and questions?',o:[['zone','Reports per zone plus targeted questions, after gate counting, tested with a simulator','Anonymous device id and a rate limit. No accounts or reputation.',1],['skip','Skip them','Faster, but less distinctive.'],['acc','Accounts with a reputation score','Needs incentives to be worth it. Not for this app.']]},
+ {id:'pilot',t:'A real pilot at VIT?',o:[['later','Maybe later, after the project is done','No permission work now.',1],['now','Yes, now','Plan for extra time and risk.'],['never','No','Dataset and your own clip are enough.']]}
+];
+const ans=Object.assign({be:'fastapi',db:'pg',fe:'react',state:'hyst',cams:'many',gate:'yes',rep:'zone'},store.get('ans',{}));
+$('#qs').innerHTML=Q.map(q=>`<div class="q"><h3>${q.t}</h3>${q.o.map(o=>`<label><input type="radio" name="q-${q.id}" value="${o[0]}" ${ans[q.id]===o[0]?'checked':''}><span>${o[1]}${o[3]?' <span class="badge must">Suggested</span>':''}<span class="why">${o[2]||''}</span></span></label>`).join('')}</div>`).join('');
+function summary(){
+  const lines=Q.map(q=>{const v=ans[q.id];const o=q.o.find(x=>x[0]===v);return o?`<li><b>${q.t.replace('?','')}:</b> ${o[1]}</li>`:`<li class="muted"><b>${q.t.replace('?','')}:</b> not decided yet</li>`}).join('');
+  const n=Object.keys(ans).length;
+  $('#summary').innerHTML=`<h3>Your plan so far (${n} of ${Q.length} decided)</h3><ul>${lines}</ul>`;
+}
+$('#qs').addEventListener('change',e=>{const r=e.target.closest('input[type=radio]');if(!r)return;ans[r.name.slice(2)]=r.value;store.set('ans',ans);summary()});
+summary();
+
+/* ---------- glossary ---------- */
+const GL=[
+ ['Anonymous device id','A random code the page makes the first time it opens and keeps in the browser. It lets the server limit spam without asking anyone to sign up.'],
+ ['Baseline','A known starting count, such as zero cars when the lot is empty at night. Gate counts only make sense relative to it.'],
+ ['Bay','One section of a large parking lot, watched by one or more cameras.'],
+ ['Drift','Small errors that pile up over time, like a pedometer slowly getting out of step with your real walking.'],
+ ['Event log','A table that records only the changes ("A-07 became taken at 09:41"), instead of every reading. Small, and ideal for analysis.'],
+ ['MapLibre','A free, open-source library for showing interactive maps in a web page.'],
+ ['Object tracking','Following the same car from one video frame to the next by giving it an identity. It is what makes counting crossings possible.'],
+ ['Rate limit','A cap on how many requests one sender can make in a time window, such as one report per zone per minute.'],
+ ['Virtual line','A line you draw across a road in the video. Each time a tracked car crosses it, the counter adds one in or out.'],
+ ['API','A set of web addresses that programs use to talk to each other. Your worker sends data to your server\'s API, and your page reads from it.'],
+ ['CI (continuous integration)','A robot that runs your tests automatically every time you push code, so broken changes are noticed at once.'],
+ ['Confidence','A number from 0 to 1 saying how sure the model is. Use it to decide when to say "unknown".'],
+ ['Docker and Compose','Docker packs a program with everything it needs so it runs the same anywhere. Compose starts several of these together with one command.'],
+ ['Edge case','An unusual situation that breaks code written only for the normal case.'],
+ ['Edge inference','Running the AI model close to the camera and sending only small results over the network.'],
+ ['Fusion','Combining several unreliable sources of evidence into one answer.'],
+ ['Golden set','A small fixed set of test images whose correct answers you know. If a change makes it worse, you notice immediately.'],
+ ['Ground truth','The known correct answer, used to grade a model.'],
+ ['Hysteresis','Changing state only after a new reading repeats several times, so a single wrong reading cannot flip the answer.'],
+ ['Inference','Using a trained model to make a prediction. Training teaches the model, and inference uses it.'],
+ ['IoU (intersection over union)','The overlap of two shapes divided by the area they cover together. 1 means identical and 0 means no overlap.'],
+ ['JSON','A plain text format for structured data, such as lists and named values. The format of your spot file and your API messages.'],
+ ['Latency','The delay between something happening and you seeing it.'],
+ ['p95','The time within which 95 out of 100 requests finish. It shows the slow cases that an average hides.'],
+ ['Polygon','A closed shape made of straight lines, stored as a list of corner points.'],
+ ['Precision and recall','Precision: when the system says "free", how often it is right. Recall: of all truly free spots, how many it found.'],
+ ['Regression test','A test that guards against something that used to work breaking again.'],
+ ['SSE (server-sent events)','A way for a server to keep a connection open and push messages to a browser as they happen.'],
+ ['TTL (time to live)','How long a piece of data is allowed to be believed before it counts as stale.'],
+ ['YOLO','A popular family of models that look at a picture and draw labelled boxes around the objects in it, quickly.']
+];
+function drawGl(q){
+  q=(q||'').toLowerCase();
+  const rows=GL.filter(g=>!q||g[0].toLowerCase().includes(q)||g[1].toLowerCase().includes(q));
+  $('#gl').innerHTML=rows.length?rows.map(g=>`<div class="card"><b>${g[0]}</b><p>${g[1]}</p></div>`).join(''):'<p class="muted">No matching term.</p>';
+}
+GL.sort((a,b)=>a[0].localeCompare(b[0]));
+$('#gl-q').addEventListener('input',e=>drawGl(e.target.value)); drawGl('');
+})();
+</script>

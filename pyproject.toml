@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+# Let tests import project folders (e.g. `from eval.pklot import ...`) from the repo root.
+pythonpath = ["."]
+testpaths = ["tests"]
