@@ -8,6 +8,7 @@ dependencies = [
   "opencv-python>=5.0.0.93",
   "pytest>=9.2.0",
   "shapely>=2.2.0",
+  "ultralytics>=8.4.212",
 ]
 
 [dependency-groups]
