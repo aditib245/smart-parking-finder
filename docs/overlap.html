@@ -1,0 +1,445 @@
+<title>Spot Overlap Playground</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one playground (drawing left, live maths right) under a function picker; code walkthrough below. */
+:root {
+  --bg: #f3f4f2;
+  --surface: #ffffff;
+  --fg: #1d2321;
+  --muted: #5d6763;
+  --line: #d9ddda;
+  --asphalt: #3a403e;
+  --paint: #e9ece6;
+  --spot: #2f8fd8;
+  --car: #e8a33a;
+  --overlap: #b04fd6;
+  --taken: #d64545;
+  --free: #2f9e5b;
+  --code-bg: #eef0ed;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151918; --surface: #1d2321; --fg: #e8ece9; --muted: #9aa5a0; --line: #2f3734;
+    --asphalt: #2a302e; --paint: #cfd5d0; --spot: #5aaef0; --car: #f0b558; --overlap: #cf7cf0;
+    --taken: #ef6a6a; --free: #4cc27e; --code-bg: #232a28; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151918; --surface: #1d2321; --fg: #e8ece9; --muted: #9aa5a0; --line: #2f3734;
+  --asphalt: #2a302e; --paint: #cfd5d0; --spot: #5aaef0; --car: #f0b558; --overlap: #cf7cf0;
+  --taken: #ef6a6a; --free: #4cc27e; --code-bg: #232a28; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 30px; font-weight: 700; }
+h2 { font-size: 21px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.9em; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13.5px; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--fg); }
+.swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* function picker */
+.picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.pick { text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 10px; padding: 10px 12px; cursor: pointer; font: inherit; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pick:hover { border-color: var(--muted); }
+.pick:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--spot); outline-offset: 2px; }
+.pick[aria-pressed="true"] { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.pick .fn { font-family: var(--font-mono); font-weight: 500; font-size: 14px; }
+.pick .q { font-size: 12.5px; color: var(--muted); }
+@media (max-width: 720px) { .picker { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* playground */
+.play { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .play { grid-template-columns: minmax(0, 1fr); } }
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+svg#scene { width: 100%; height: auto; display: block; border-radius: 8px; touch-action: none; user-select: none; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.presets button, .toggle { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+.presets button:hover, .toggle:hover { border-color: var(--muted); }
+.hint { font-size: 12.5px; color: var(--muted); }
+
+.panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.explain { display: flex; flex-direction: column; gap: 8px; }
+.question { font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+.calc { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; font-variant-numeric: tabular-nums; }
+.row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-size: 14px; }
+.row .k { color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.row .v { font-family: var(--font-mono); }
+.formula { font-family: var(--font-mono); font-size: 13.5px; padding: 10px; border-radius: 8px; background: var(--code-bg); overflow-x: auto; white-space: nowrap; }
+.result { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.big { font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 1; }
+.bar { height: 10px; border-radius: 99px; background: var(--code-bg); position: relative; overflow: visible; }
+.bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--overlap); transition: width .12s; }
+.bar .tick { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--fg); }
+.verdict { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 4px 12px; border-radius: 999px; font-size: 14px; }
+.verdict.taken { background: color-mix(in srgb, var(--taken) 16%, transparent); color: var(--taken); }
+.verdict.free { background: color-mix(in srgb, var(--free) 16%, transparent); color: var(--free); }
+.slider { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; }
+.slider input { width: 100%; accent-color: var(--fg); }
+.car-list { display: flex; flex-direction: column; gap: 6px; }
+.car-row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 13.5px; }
+.car-row .mini { height: 6px; border-radius: 99px; background: var(--code-bg); position: relative; }
+.car-row .mini span { position: absolute; inset: 0 auto 0 0; background: var(--car); border-radius: 99px; }
+.car-row.best { font-weight: 600; }
+.car-row.best .mini span { background: var(--overlap); }
+
+/* code walkthrough */
+.code { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.code-head { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.code-head .path { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.lines { overflow-x: auto; }
+table.walk { border-collapse: collapse; width: 100%; min-width: 640px; }
+table.walk td { vertical-align: top; padding: 7px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+table.walk tr:last-child td { border-bottom: 0; }
+table.walk td.src { font-family: var(--font-mono); white-space: pre; background: var(--code-bg); width: 52%; font-size: 12.8px; }
+table.walk td.what { color: var(--fg); }
+table.walk td.what .js { display: block; color: var(--muted); font-family: var(--font-mono); font-size: 12px; margin-top: 2px; }
+
+.chain { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 720px) { .chain { grid-template-columns: minmax(0, 1fr); } }
+.link { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; min-width: 0; }
+.link .fn { font-family: var(--font-mono); font-weight: 500; }
+.link .uses { color: var(--muted); font-size: 12.5px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">worker/geometry.py · Block 2</span>
+    <h1>Is this parking spot taken?</h1>
+    <p>Two shapes meet here. The <b>spot outline</b> comes from the PKLot label file (Block 1). The <b>car box</b> will come from the detector (Block 3). The functions in <code>geometry.py</code> only measure how much the two shapes overlap. Drag the car around to see every number change.</p>
+    <div class="flow">
+      <span class="chip"><span class="swatch" style="background:var(--spot)"></span>spot outline (4 corners)</span>
+      <span class="chip"><span class="swatch" style="background:var(--car)"></span>car box (x1, y1, x2, y2)</span>
+      <span class="chip"><span class="swatch" style="background:var(--overlap)"></span>overlap (intersection)</span>
+    </div>
+  </header>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <span class="eyebrow">Pick a function</span>
+    <div class="picker" role="group" aria-label="Function to explain">
+      <button class="pick" id="pick-coverage" data-mode="coverage" aria-pressed="true"><span class="fn">coverage()</span><span class="q">How much of the spot does the car hide?</span></button>
+      <button class="pick" id="pick-iou" data-mode="iou" aria-pressed="false"><span class="fn">iou()</span><span class="q">How alike are the two shapes?</span></button>
+      <button class="pick" id="pick-best" data-mode="best" aria-pressed="false"><span class="fn">best_coverage()</span><span class="q">Several cars: which hides the most?</span></button>
+      <button class="pick" id="pick-taken" data-mode="taken" aria-pressed="false"><span class="fn">is_taken()</span><span class="q">So, yes or no?</span></button>
+    </div>
+  </section>
+
+  <section class="play">
+    <div class="stage">
+      <svg id="scene" viewBox="0 0 420 280" aria-label="A tilted parking spot and draggable car boxes">
+        <defs>
+          <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="var(--overlap)" fill-opacity="0.35"></rect>
+            <line x1="0" y1="0" x2="0" y2="6" stroke="var(--overlap)" stroke-width="2"></line>
+          </pattern>
+        </defs>
+        <rect x="0" y="0" width="420" height="280" fill="var(--asphalt)"></rect>
+        <g id="ticks"></g>
+        <g id="lanes"></g>
+        <polygon id="spot" fill="var(--spot)" fill-opacity="0.18" stroke="var(--spot)" stroke-width="2.5"></polygon>
+        <g id="cars"></g>
+        <g id="overlaps"></g>
+        <g id="handles"></g>
+      </svg>
+      <div class="presets" aria-label="Example situations">
+        <button id="p-on">Car parked on the spot</button>
+        <button id="p-half">Half in</button>
+        <button id="p-big">Huge box (tilted camera)</button>
+        <button id="p-spill">Neighbour's car spills in</button>
+        <button id="p-away">No car near</button>
+        <button id="toggle-car2" class="toggle">Add a second car</button>
+      </div>
+      <span class="hint">Drag a car box to move it. Drag its small square corner to resize it. Units are pixels, like the real 1280×720 PKLot photos.</span>
+    </div>
+
+    <div class="panel">
+      <div class="explain">
+        <span class="question" id="q"></span>
+        <p id="plain"></p>
+      </div>
+      <div class="calc" id="calc"></div>
+      <label class="slider" id="thr-box" for="thr" hidden>Threshold: <b class="mono" id="thr-v">0.50</b>
+        <input type="range" id="thr" min="0.05" max="0.95" step="0.05" value="0.5">
+      </label>
+    </div>
+  </section>
+
+  <section class="code">
+    <div class="code-head"><h3 id="code-title"></h3><span class="path">worker/geometry.py</span></div>
+    <div class="lines"><table class="walk"><tbody id="walk"></tbody></table></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <h2>How the functions call each other</h2>
+    <p>Each function builds on the one before it. Only <code>is_taken()</code> gives a yes or no; the others return a number between 0 and 1.</p>
+    <div class="chain">
+      <div class="link"><span class="fn">coverage(spot, car)</span><span>One spot, one car. Returns a fraction.</span><span class="uses">uses shapely: Polygon, box, intersection</span></div>
+      <div class="link"><span class="fn">iou(spot, car)</span><span>Same inputs, stricter score. Kept for comparison in Block 4.</span><span class="uses">uses shapely: intersection, union</span></div>
+      <div class="link"><span class="fn">best_coverage(spot, cars)</span><span>One spot, many cars. Calls <code>coverage</code> once per car, keeps the biggest.</span><span class="uses">calls coverage()</span></div>
+      <div class="link"><span class="fn">is_taken(spot, cars)</span><span>Compares the best coverage to the threshold (0.5). Returns True or False.</span><span class="uses">calls best_coverage()</span></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  // ---------- geometry (the same maths shapely does for us in Python) ----------
+  const area = (poly) => {
+    let s = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const [x1, y1] = poly[i], [x2, y2] = poly[(i + 1) % poly.length];
+      s += x1 * y2 - x2 * y1;
+    }
+    return Math.abs(s) / 2;
+  };
+  // Cut a polygon down to the part inside an upright rectangle (Sutherland-Hodgman).
+  const clip = (poly, [x1, y1, x2, y2]) => {
+    const edges = [
+      [p => p[0] >= x1, (a, b) => { const t = (x1 - a[0]) / (b[0] - a[0]); return [x1, a[1] + t * (b[1] - a[1])]; }],
+      [p => p[0] <= x2, (a, b) => { const t = (x2 - a[0]) / (b[0] - a[0]); return [x2, a[1] + t * (b[1] - a[1])]; }],
+      [p => p[1] >= y1, (a, b) => { const t = (y1 - a[1]) / (b[1] - a[1]); return [a[0] + t * (b[0] - a[0]), y1]; }],
+      [p => p[1] <= y2, (a, b) => { const t = (y2 - a[1]) / (b[1] - a[1]); return [a[0] + t * (b[0] - a[0]), y2]; }],
+    ];
+    let out = poly;
+    for (const [inside, cross] of edges) {
+      const input = out; out = [];
+      for (let i = 0; i < input.length; i++) {
+        const cur = input[i], prev = input[(i + input.length - 1) % input.length];
+        if (inside(cur)) { if (!inside(prev)) out.push(cross(prev, cur)); out.push(cur); }
+        else if (inside(prev)) out.push(cross(prev, cur));
+      }
+      if (!out.length) break;
+    }
+    return out;
+  };
+  const boxArea = ([x1, y1, x2, y2]) => Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+
+  // ---------- state ----------
+  const SPOT = [[160, 72], [262, 88], [246, 206], [142, 190]]; // a tilted spot, like a PKLot camera sees it
+  const NEIGHBOURS = [[[48, 56], [150, 70], [132, 188], [28, 172]], [[272, 90], [374, 106], [360, 222], [256, 208]]];
+  const state = { mode: "coverage", threshold: 0.5, cars: [[150, 80, 250, 196]], car2: false };
+  const CAR2_DEFAULT = [222, 120, 330, 230];
+  const PRESETS = {
+    "p-on": [150, 80, 256, 200],
+    "p-half": [150, 76, 206, 202],
+    "p-big": [118, 40, 300, 240],
+    "p-spill": [40, 60, 176, 196],
+    "p-away": [300, 20, 400, 80],
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const svg = $("scene");
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  const pts = (poly) => poly.map(p => p.join(",")).join(" ");
+  const pct = (x) => `${Math.round(x * 100)}%`;
+  const n = (x) => Math.round(x).toLocaleString("en-US");
+  const f2 = (x) => x.toFixed(2);
+
+  // static scenery: neighbouring spots and pixel ticks
+  NEIGHBOURS.forEach(p => $("lanes").append(el("polygon", { points: pts(p), fill: "none", stroke: "var(--paint)", "stroke-width": 1.5, opacity: 0.45 })));
+  for (let x = 0; x <= 420; x += 50) {
+    $("ticks").append(el("line", { x1: x, y1: 0, x2: x, y2: 6, stroke: "var(--paint)", opacity: 0.5 }));
+    if (x && x < 420) { const t = el("text", { x: x, y: 16, fill: "var(--paint)", "font-size": 8, "text-anchor": "middle", opacity: 0.6, "font-family": "JetBrains Mono, monospace" }); t.textContent = x; $("ticks").append(t); }
+  }
+  $("spot").setAttribute("points", pts(SPOT));
+
+  // ---------- per-car numbers ----------
+  const measure = (car) => {
+    const inter = clip(SPOT, car);
+    const spotA = area(SPOT), carA = boxArea(car), interA = inter.length ? area(inter) : 0;
+    const unionA = spotA + carA - interA;
+    return { inter, spotA, carA, interA, unionA, cov: spotA ? interA / spotA : 0, iou: unionA ? interA / unionA : 0 };
+  };
+
+  // ---------- drawing ----------
+  const activeCars = () => state.car2 ? state.cars : [state.cars[0]];
+  const draw = () => {
+    const cars = activeCars();
+    const ms = cars.map(measure);
+    const bestIdx = ms.reduce((b, m, i) => (m.cov > ms[b].cov ? i : b), 0);
+    const best = ms.length ? ms[bestIdx].cov : 0;
+    const taken = best >= state.threshold;
+
+    $("cars").replaceChildren(); $("overlaps").replaceChildren(); $("handles").replaceChildren();
+    cars.forEach((c, i) => {
+      const [x1, y1, x2, y2] = c;
+      const r = el("rect", { x: x1, y: y1, width: x2 - x1, height: y2 - y1, fill: "var(--car)", "fill-opacity": 0.22, stroke: "var(--car)", "stroke-width": 2.5, rx: 3, style: "cursor:move", "data-car": i, "data-act": "move" });
+      $("cars").append(r);
+      const label = el("text", { x: x1 + 6, y: y1 + 15, fill: "var(--car)", "font-size": 12, "font-weight": 600, "font-family": "Inter, sans-serif", "pointer-events": "none" });
+      label.textContent = cars.length > 1 ? `car ${"AB"[i]}` : "car";
+      $("handles").append(label);
+      if (ms[i].inter.length) $("overlaps").append(el("polygon", { points: pts(ms[i].inter), fill: "url(#hatch)", stroke: "var(--overlap)", "stroke-width": 1.5, "pointer-events": "none" }));
+      $("handles").append(el("rect", { x: x2 - 7, y: y2 - 7, width: 14, height: 14, fill: "var(--surface)", stroke: "var(--car)", "stroke-width": 2, rx: 2, style: "cursor:nwse-resize", "data-car": i, "data-act": "resize" }));
+    });
+
+    // spot colour: in is_taken mode it shows the verdict, like preview.py's red/green
+    const spotColour = state.mode === "taken" ? (taken ? "var(--taken)" : "var(--free)") : "var(--spot)";
+    $("spot").setAttribute("stroke", spotColour); $("spot").setAttribute("fill", spotColour);
+
+    $("toggle-car2").textContent = state.car2 ? "Remove the second car" : "Add a second car";
+    renderPanel(ms, bestIdx, best, taken);
+  };
+
+  // ---------- explanation panel ----------
+  const COPY = {
+    coverage: {
+      q: "How much of the spot is hidden under the car?",
+      plain: "Coverage = the purple overlap ÷ the whole blue spot. If the car hides 80% of the spot's paint, coverage is 0.80. The car's own size does not matter, only how much of the spot it sits on. This is the number we use to decide taken or free.",
+    },
+    iou: {
+      q: "How similar are the two shapes?",
+      plain: "IoU (intersection over union) = the purple overlap ÷ everything that is blue or orange, counted once. It is 1.0 only when the two shapes match exactly. A huge car box that swallows the spot still gets a low IoU, because the box is much bigger than the spot. Try the “Huge box” example: coverage stays at 100% while IoU drops.",
+    },
+    best: {
+      q: "Several cars on screen. Which one matters?",
+      plain: "The detector finds every car in the photo, so a spot is compared with many boxes. best_coverage asks coverage() about each car and keeps the biggest answer. A car that only grazes the spot cannot outvote the car actually parked on it. With no cars at all, the answer is 0.",
+    },
+    taken: {
+      q: "So, is the spot taken: yes or no?",
+      plain: "is_taken compares the best coverage with a threshold, 0.5 by default. At or above it, the spot is taken (red, like preview.py). Below it, free (green). Move the slider to see how a stricter or looser threshold changes the answer. Block 4 will pick the best value by testing on real photos.",
+    },
+  };
+
+  const renderPanel = (ms, bestIdx, best, taken) => {
+    const m = ms[0];
+    $("q").textContent = COPY[state.mode].q;
+    $("plain").textContent = COPY[state.mode].plain;
+    const sw = (v) => `<span class="swatch" style="background:var(${v})"></span>`;
+    let h = "";
+    if (state.mode === "coverage") {
+      h = `
+        <div class="row"><span class="k">${sw("--overlap")}overlap area</span><span class="v">${n(m.interA)} px²</span></div>
+        <div class="row"><span class="k">${sw("--spot")}spot area</span><span class="v">${n(m.spotA)} px²</span></div>
+        <div class="formula">${n(m.interA)} ÷ ${n(m.spotA)} = ${f2(m.cov)}</div>
+        <div class="result"><span class="big">${pct(m.cov)}</span><span class="hint">of the spot is under the car</span></div>
+        <div class="bar"><div class="fill" style="width:${m.cov * 100}%"></div></div>
+        <div class="row"><span class="k">for comparison, iou()</span><span class="v">${f2(m.iou)}</span></div>`;
+    } else if (state.mode === "iou") {
+      h = `
+        <div class="row"><span class="k">${sw("--overlap")}overlap area</span><span class="v">${n(m.interA)} px²</span></div>
+        <div class="row"><span class="k">${sw("--spot")}spot area</span><span class="v">${n(m.spotA)} px²</span></div>
+        <div class="row"><span class="k">${sw("--car")}car box area</span><span class="v">${n(m.carA)} px²</span></div>
+        <div class="row"><span class="k">union = spot + car − overlap</span><span class="v">${n(m.unionA)} px²</span></div>
+        <div class="formula">${n(m.interA)} ÷ ${n(m.unionA)} = ${f2(m.iou)}</div>
+        <div class="result"><span class="big">${f2(m.iou)}</span><span class="hint">IoU (1.00 = identical shapes)</span></div>
+        <div class="bar"><div class="fill" style="width:${m.iou * 100}%"></div></div>
+        <div class="row"><span class="k">for comparison, coverage()</span><span class="v">${f2(m.cov)}</span></div>`;
+    } else if (state.mode === "best") {
+      const rows = ms.map((x, i) => `
+        <div class="car-row ${i === bestIdx ? "best" : ""}"><span>${ms.length > 1 ? "car " + "AB"[i] : "car"}</span><span class="mini"><span style="width:${x.cov * 100}%"></span></span><span class="mono">${f2(x.cov)}</span></div>`).join("");
+      h = `
+        <span class="hint">coverage() for each car</span>
+        <div class="car-list">${rows}</div>
+        <div class="formula">max(${ms.map(x => f2(x.cov)).join(", ")}) = ${f2(best)}</div>
+        <div class="result"><span class="big">${f2(best)}</span><span class="hint">${ms.length > 1 ? `car ${"AB"[bestIdx]} wins` : "add a second car to compare"}</span></div>`;
+    } else {
+      h = `
+        <div class="row"><span class="k">best_coverage()</span><span class="v">${f2(best)}</span></div>
+        <div class="row"><span class="k">threshold</span><span class="v">${f2(state.threshold)}</span></div>
+        <div class="formula">${f2(best)} ≥ ${f2(state.threshold)} → ${taken ? "True" : "False"}</div>
+        <div class="bar"><div class="fill" style="width:${best * 100}%;background:var(${taken ? "--taken" : "--free"})"></div><div class="tick" style="left:calc(${state.threshold * 100}% - 1px)"></div></div>
+        <div class="result"><span class="verdict ${taken ? "taken" : "free"}">${taken ? "Taken" : "Free"}</span><span class="hint">returns ${taken ? "True" : "False"}</span></div>`;
+    }
+    $("calc").innerHTML = h;
+    $("thr-box").hidden = state.mode !== "taken";
+    $("thr-v").textContent = f2(state.threshold);
+  };
+
+  // ---------- code walkthrough ----------
+  const WALK = {
+    coverage: ["coverage(): line by line", [
+      ["def coverage(spot_corners: Corners, car_box: Box) -> float:", "Takes the spot's 4 corners and one car box. Promises to return a decimal number.", "function coverage(spotCorners: Corners, carBox: Box): number"],
+      ['  """Fraction of the spot\'s area that the car box covers."""', "A docstring: a built-in comment your editor shows on hover, like JSDoc.", "/** Fraction of the spot's area... */"],
+      ["  spot = Polygon(spot_corners)", "Turn the list of corners into a shape shapely can measure. The blue outline.", "const spot = new Polygon(spotCorners)"],
+      ["  if spot.area == 0:\n    return 0.0", "Safety net: a flat spot has no area, and dividing by zero would crash.", "if (spot.area === 0) return 0"],
+      ["  car = box(*car_box)", "Build the orange rectangle. The * spreads (x1, y1, x2, y2) into 4 separate arguments.", "const car = box(...carBox)"],
+      ["  return spot.intersection(car).area / spot.area", "intersection = the purple overlap shape. Its area ÷ the spot's area = the fraction hidden.", "return spot.intersection(car).area / spot.area"],
+    ]],
+    iou: ["iou(): line by line", [
+      ["def iou(spot_corners: Corners, car_box: Box) -> float:", "Same inputs as coverage(). Also returns a decimal.", "function iou(spotCorners, carBox): number"],
+      ["  spot = Polygon(spot_corners)\n  car = box(*car_box)", "Build both shapes, exactly as in coverage().", ""],
+      ["  union_area = spot.union(car).area", "union = both shapes merged into one, overlap counted once. This is the bottom of the fraction.", "const unionArea = spot.union(car).area"],
+      ["  if union_area == 0:\n    return 0.0", "Safety net against dividing by zero.", ""],
+      ["  return spot.intersection(car).area / union_area", "Overlap ÷ union. Only 1.0 when the shapes are identical.", ""],
+    ]],
+    best: ["best_coverage(): line by line", [
+      ["def best_coverage(spot_corners: Corners, car_boxes: list[Box]) -> float:", "Now a list of car boxes: every car the detector found in the photo.", "function bestCoverage(spotCorners, carBoxes: Box[]): number"],
+      ["  return max(", "max() picks the biggest value, like Math.max.", "return Math.max("],
+      ["    (coverage(spot_corners, b) for b in car_boxes),", "A generator: call coverage() for each box b, handing the results to max() one at a time.", "  ...carBoxes.map(b => coverage(spotCorners, b)),"],
+      ["    default=0.0)", "If the list is empty, return 0 instead of crashing. max() of nothing is an error in Python.", "  0)  // Math.max() alone gives -Infinity"],
+    ]],
+    taken: ["is_taken(): line by line", [
+      ["TAKEN_THRESHOLD = 0.5", "A module-level constant (capital letters by convention). One place to change it later.", "const TAKEN_THRESHOLD = 0.5"],
+      ["def is_taken(spot_corners, car_boxes,\n             threshold: float = TAKEN_THRESHOLD) -> bool:", "threshold has a default value, so callers can leave it out, or pass threshold=0.3 to override.", "function isTaken(spot, cars, threshold = TAKEN_THRESHOLD): boolean"],
+      ["  return best_coverage(spot_corners, car_boxes) >= threshold", "Get the best coverage, compare with the threshold. A comparison is already True or False, so return it directly.", "return bestCoverage(spot, cars) >= threshold"],
+    ]],
+  };
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const renderWalk = () => {
+    const [title, rows] = WALK[state.mode];
+    $("code-title").textContent = title;
+    $("walk").innerHTML = rows.map(([src, what, js]) =>
+      `<tr><td class="src">${esc(src)}</td><td class="what">${esc(what)}${js ? `<span class="js">JS: ${esc(js)}</span>` : ""}</td></tr>`).join("");
+  };
+
+  // ---------- interactions ----------
+  document.querySelectorAll(".pick").forEach(b => b.addEventListener("click", () => {
+    state.mode = b.dataset.mode;
+    document.querySelectorAll(".pick").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    if (state.mode === "best" && !state.car2) { state.car2 = true; if (state.cars.length < 2) state.cars[1] = [...CAR2_DEFAULT]; }
+    renderWalk(); draw();
+  }));
+  Object.entries(PRESETS).forEach(([id, box]) => $(id).addEventListener("click", () => { state.cars[0] = [...box]; draw(); }));
+  $("thr").addEventListener("input", (e) => { state.threshold = parseFloat(e.target.value); draw(); });
+  $("toggle-car2").addEventListener("click", () => {
+    state.car2 = !state.car2;
+    if (state.car2 && state.cars.length < 2) state.cars[1] = [...CAR2_DEFAULT];
+    draw();
+  });
+
+  const toSvg = (e) => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+  let drag = null;
+  svg.addEventListener("pointerdown", (e) => {
+    const t = e.target.closest("[data-act]"); if (!t) return;
+    const i = +t.dataset.car, p = toSvg(e);
+    drag = { i, act: t.dataset.act, start: [p.x, p.y], box: [...state.cars[i]] };
+    svg.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  svg.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    const p = toSvg(e), dx = p.x - drag.start[0], dy = p.y - drag.start[1];
+    const [x1, y1, x2, y2] = drag.box;
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    if (drag.act === "move") {
+      const w = x2 - x1, h = y2 - y1;
+      const nx = clamp(x1 + dx, -w + 20, 400), ny = clamp(y1 + dy, -h + 20, 260);
+      state.cars[drag.i] = [nx, ny, nx + w, ny + h];
+    } else {
+      state.cars[drag.i] = [x1, y1, Math.max(x1 + 20, Math.min(420, x2 + dx)), Math.max(y1 + 20, Math.min(280, y2 + dy))];
+    }
+    draw();
+  });
+  const end = () => { drag = null; };
+  svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
+
+  renderWalk(); draw();
+})();
+</script>
