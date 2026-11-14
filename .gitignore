@@ -8,6 +8,7 @@ __pycache__/
 data/*
 !data/.gitkeep
 *.pt
+models/
 
 # generated previews and debug images
 out/
